@@ -88,7 +88,7 @@ def load_data(file_name):
 
 class Utils:
     """
-        Utils class for the Travelling Thief Problem 
+        Utils class
 
         Distance Calculation
         Profit Calculation
@@ -140,7 +140,7 @@ class Utils:
 
         return weight
 
-    def distance(self, node1, node2):
+    def get_distance(self, node1, node2):
         """
             Calculates the distance between two nodes
 
@@ -149,7 +149,7 @@ class Utils:
         """
         return ((node1[1] - node2[1])**2 + (node1[2] - node2[2])**2)**0.5
     
-    def profit(self, route):
+    def get_profit(self, route):
         """
             Calculates the profit of the route
 
@@ -167,7 +167,7 @@ class Utils:
         return profit
     
 
-    def validate_individual(self, individual):
+    def is_valid_individual(self, individual):
         """
             Checks if the individual is valid
         """
@@ -183,7 +183,6 @@ class GA:
     """
         Genetic Algorithm class
         for GECO2019
-    
     """
 
     UTIL = None
@@ -229,8 +228,6 @@ class GA:
         """
         # random number between 0 and num_nodes
 
-        # initial node? TODO: check if you start at node 1 or a random one (this will change distance)
-
         individual_id = [] #used purely to avoid duplicates and reduced complexity
         duplicate_retry = 0 # flag counter for duplicate retries
 
@@ -252,7 +249,7 @@ class GA:
                 # print("Length: ", len(individual_id))
                 break
                     # [individual_id[-1], individual_bags[-1]]
-            individual_validity = self.UTIL.validate_individual(individual)
+            individual_validity = self.UTIL.is_valid_individual(individual)
 
             if individual_validity == 0: # valid node & bags
                 duplicate_retry = 0 # reset duplicate retry 
@@ -261,7 +258,6 @@ class GA:
                 retries -= 1 
             elif individual_validity == 2: # invalid node due to duplicates
                 # invalid node due to duplicates
-                # TODO: replace 280 with a reasonable number based on number of nodes or weight:num_node ratio
                 if duplicate_retry > 15: # duplicates can occur due to chance so try again
                     # too many duplicates found
                     # print(f"Could not max out the individual capacity len: {len(individual)}")
