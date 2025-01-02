@@ -138,8 +138,6 @@ class Utils:
             for i in range(len(ws)):
                 weight += ws[i] * self.nodes[node[0]-1][i]
 
-        print(f"{weight}/{self.problem_dict['CAPACITY']}")
-
         return weight
 
     def distance(self, node1, node2):
@@ -174,11 +172,9 @@ class Utils:
             Checks if the individual is valid
         """
         if self.__has_duplicates__(individual):
-            print("Duplicates found len: ", len(individual), " ", individual)
             return 2
         
         if self.get_weight(individual) > self.problem_dict["CAPACITY"]:
-            print("Weight exceeds capacity")
             return 1
         
         return 0
@@ -253,7 +249,7 @@ class GA:
                 # TODO: remove [0] values (too lazy tonight todo it but easy fix)
             # else: retries -= 1
             if retries <= 0:
-                print("Length: ", len(individual_id))
+                # print("Length: ", len(individual_id))
                 break
                     # [individual_id[-1], individual_bags[-1]]
             individual_validity = self.UTIL.validate_individual(individual)
@@ -261,7 +257,6 @@ class GA:
             if individual_validity == 0: # valid node & bags
                 duplicate_retry = 0 # reset duplicate retry 
             elif individual_validity == 1: # invalid node due to weight 
-                print("HEAVY BOI")
                 individual.pop()
                 retries -= 1 
             elif individual_validity == 2: # invalid node due to duplicates
@@ -269,12 +264,11 @@ class GA:
                 # TODO: replace 280 with a reasonable number based on number of nodes or weight:num_node ratio
                 if duplicate_retry > 15: # duplicates can occur due to chance so try again
                     # too many duplicates found
-                    print(f"Could not max out the individual capacity len: {len(individual)}")
+                    # print(f"Could not max out the individual capacity len: {len(individual)}")
                     break
                 duplicate_retry += 1
                 individual.pop()
                 
-        print(len(individual))
         return individual
 
     def mutation_single_node_full(self, individual_node_id):
@@ -291,7 +285,7 @@ class GA:
             return [1]
         
         if bag_length == 0:
-            print("[0] No bags available for node " + str(individual_node_id) + "!")
+            # print("[0] No bags available for node " + str(individual_node_id) + "!")
             return [0]
         
         # TODO: CHECK THIS FOR MORE THAN 1 BAG
