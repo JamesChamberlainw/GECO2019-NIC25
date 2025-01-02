@@ -117,9 +117,9 @@ class TravellingThiefUtils:
         list = [x[0] for x in individual]
 
         if len(list) == len(set(list)):
-            return True
-        else:
             return False
+        else:
+            return True
     
     def get_weight(self, route):
         """
@@ -131,18 +131,12 @@ class TravellingThiefUtils:
             Output: int
         """
 
-        if len(route) <= 1:
-            return 0
-
         weight = 0
 
         for node in route:
-            ws = node[3]
+            ws = node[1]
             for i in range(len(ws)):
-                print(ws[i])
-                weight += ws[i]
-            for w in ws:
-                weight += w[1] * node
+                weight += ws[i] * self.nodes[node[0]-1][i]
 
         print(f"{weight}/{self.problem_dict['CAPACITY']}")
 
@@ -180,12 +174,13 @@ class TravellingThiefUtils:
             Checks if the individual is valid
         """
         if self.__has_duplicates__(individual):
+            print("Duplicates found len: ", len(individual), " ", individual)
             return 2
         
         if self.get_weight(individual) > self.problem_dict["CAPACITY"]:
             print("Weight exceeds capacity")
             return 1
-
+        
         return 0
 
         
@@ -266,9 +261,8 @@ class GA:
 
                 individual.append([r, self.mutation_single_node_full(r)])
                 # TODO: remove [0] values (too lazy tonight todo it but easy fix)
-            else: retries -= 1
+            # else: retries -= 1
             if retries <= 0:
-                print("Could not generate a valid node")
                 print("Length: ", len(individual_id))
                 break
                     # [individual_id[-1], individual_bags[-1]]
@@ -283,7 +277,7 @@ class GA:
             elif individual_validity == 2: # invalid node due to duplicates
                 # invalid node due to duplicates
                 # TODO: replace 280 with a reasonable number based on number of nodes or weight:num_node ratio
-                if duplicate_retry > 280: # duplicates can occur due to chance so try again
+                if duplicate_retry > 15: # duplicates can occur due to chance so try again
                     # too many duplicates found
                     print(f"Could not max out the individual capacity len: {len(individual)}")
                     break
