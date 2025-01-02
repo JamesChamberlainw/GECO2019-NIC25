@@ -86,7 +86,7 @@ def load_data(file_name):
             
         return nodes, problem_dict
 
-class TravellingThiefUtils:
+class Utils:
     """
         Utils class for the Travelling Thief Problem 
 
@@ -183,10 +183,6 @@ class TravellingThiefUtils:
         
         return 0
 
-        
-        
-
-
 class GA:
     """
         Genetic Algorithm class
@@ -221,18 +217,12 @@ class GA:
         self.pop_size = pop_size
         self.num_nodes = len(nodes)
 
-        self.UTIL = TravellingThiefUtils(nodes, problem_dict)
+        self.UTIL = Utils(nodes, problem_dict)
 
         # generate initial population
         for i in range(pop_size):
             individual = self.generate_individual()
             self.pop.append(individual)
-
-    def travel():
-        """
-            Generates a new point for the GA to evaluate given the current population
-        """
-        pass
 
     def generate_individual(self, retries = 3):
         """
@@ -287,12 +277,6 @@ class GA:
         print(len(individual))
         return individual
 
-    def crossover(self):
-        pass
-
-    def mutation(self):
-        pass
-
     def mutation_single_node_full(self, individual_node_id):
         """
             Fully mutates a single node's selected bags in the individual
@@ -321,11 +305,6 @@ class GA:
 
         return bags
 
-        # random chance 0 or 1
-
-
-        pass
-
     def mutation_bags(self):
         """
             Mutates the bags of the individuals 
@@ -333,8 +312,6 @@ class GA:
             swaps the bags around to see if the solution improves 
                 DOES NOT CHANGE THE VISITED NODES
         """
-
-        
         pass
 
     def selection(self):
