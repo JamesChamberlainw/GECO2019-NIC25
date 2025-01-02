@@ -340,36 +340,6 @@ class GA:
     def selection(self):
         pass
 
-class SMSEMOA:
-    """
-        SMS-EMOA class
-        for GEKO2019
-    """
-
-    z_Nadir = [0, 0] # z_Nadir = [max_profit, max_weight]
-
-    def __init__(self):
-        pass
-
-    def hv_calculation(self, front):
-        """
-            Hyper-volume Contribution Calculation
-
-            Input:
-                front: List of lists
-                    [[profit, weight], [profit, weight], ...]
-                self: 
-                    z_Nadir: [x, y]
-            Output: list of hyper-volume contributions for each point in the front
-            
-        """
-        pass
-
-
-    def selection(self):
-        pass
-
-
 nodes, problem_dict = load_data(DIR + "a280-n279.txt")
 
 ga = GA(nodes, problem_dict)
