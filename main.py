@@ -1,4 +1,7 @@
 import csv 
+import numpy as np
+import random
+
 
 DIR = "resources/" # + "test-example-n4.txt" # loading data
 
@@ -83,32 +86,261 @@ def load_data(file_name):
             
         return nodes, problem_dict
 
-nodes, problem_dict = load_data(DIR + "pla33810-n169045.txt")
+class TravellingThiefUtils:
+    """
+        Utils class for the Travelling Thief Problem 
 
-print(nodes[1])
+        Distance Calculation
+        Profit Calculation
+        Weight Calculation
+
+        and other utility functions such as: can_visit(), can_take() etc.
+    """
+
+    problem_dict = {}
+    nodes = []
+
+    def __init__(self, nodes, problem_dict):
+        self.nodes = nodes
+        self.problem_dict = problem_dict
+        pass
+
+    def __has_duplicates__(self, individual):
+        """
+            Checks if the list has duplicates
+        """
+        if len(individual) <= 1:
+            # Too short to have duplicates
+            return False
+        
+        # collect the node ids
+        list = [x[0] for x in individual]
+
+        if len(list) == len(set(list)):
+            return True
+        else:
+            return False
+    
+    def get_weight(self, route):
+        """
+            Calculates the weight of the route
+
+            Input: List of lists
+                [[node_id, [bool, bool, ...]], ...]
+
+            Output: int
+        """
+
+        if len(route) <= 1:
+            return 0
+
+        weight = 0
+
+        for node in route:
+            ws = node[3]
+            for i in range(len(ws)):
+                print(ws[i])
+                weight += ws[i]
+            for w in ws:
+                weight += w[1] * node
+
+        print(f"{weight}/{self.problem_dict['CAPACITY']}")
+
+        return weight
+
+    def distance(self, node1, node2):
+        """
+            Calculates the distance between two nodes
+
+            Input: List of lists
+                [node_id, x, y, [profit, weight, bag_id], [profit, weight, bag_id], ...]
+        """
+        return ((node1[1] - node2[1])**2 + (node1[2] - node2[2])**2)**0.5
+    
+    def profit(self, route):
+        """
+            Calculates the profit of the route
+
+            Input: List of lists
+                [[node_id, [bool, bool, ...]], ...]
+
+            Output: int
+        """
+
+        profit = 0
+
+        for node in route:
+            profit += node[3][0][0]
+
+        return profit
+    
+
+    def validate_individual(self, individual):
+        """
+            Checks if the individual is valid
+        """
+        if self.__has_duplicates__(individual):
+            return 2
+        
+        if self.get_weight(individual) > self.problem_dict["CAPACITY"]:
+            print("Weight exceeds capacity")
+            return 1
+
+        return 0
+
+        
+        
+
 
 class GA:
     """
         Genetic Algorithm class
-        for GEKO2019
+        for GECO2019
     
     """
 
+    UTIL = None
+
     pop = []
+    pop_size = 100
+    num_nodes = 0
 
+    def __init__(self, nodes, problem_dict, pop_size = 100):
+        """
+            Initializes the GA with the nodes and problem_dict
 
-    def __init__(self):
-        pass
+            Input:
+                nodes: List of lists
+                    [[node_id, x, y, [profit, weight, bag_id], [profit, weight, bag_id], ...], ...]
+                problem_dict: Dictionary
+                    {
+                        ...
+                        "DIMENSION": int,              
+                        "NUMBER_OF_ITEMS": int,
+                        "CAPACITY": int,
+                        "SPEED_MIN": float,
+                        "SPEED_MAX": float,
+                        "RENTING_RATIO": float,
+                    }
+        """
+        self.pop_size = pop_size
+        self.num_nodes = len(nodes)
 
-    def neu_point():
+        self.UTIL = TravellingThiefUtils(nodes, problem_dict)
+
+        # generate initial population
+        for i in range(pop_size):
+            individual = self.generate_individual()
+            self.pop.append(individual)
+
+    def travel():
         """
             Generates a new point for the GA to evaluate given the current population
         """
+        pass
+
+    def generate_individual(self, retries = 3):
+        """
+            Generates a new individual with the given nodes
+
+            Input: retries (int)
+                Number of times to retry generating a new individual
+        """
+        # random number between 0 and num_nodes
+
+        # initial node? TODO: check if you start at node 1 or a random one (this will change distance)
+
+        individual_id = [] #used purely to avoid duplicates and reduced complexity
+        duplicate_retry = 0 # flag counter for duplicate retries
+
+        individual = []
+
+        incomplete = True
+        while incomplete:
+            # generate node
+            r = random.randint(0, self.num_nodes-1)
+
+            if r not in individual_id:
+                individual_id.append(r)
+                # generate bags
+
+                individual.append([r, self.mutation_single_node_full(r)])
+                # TODO: remove [0] values (too lazy tonight todo it but easy fix)
+            else: retries -= 1
+            if retries <= 0:
+                print("Could not generate a valid node")
+                print("Length: ", len(individual_id))
+                break
+                    # [individual_id[-1], individual_bags[-1]]
+            individual_validity = self.UTIL.validate_individual(individual)
+
+            if individual_validity == 0: # valid node & bags
+                duplicate_retry = 0 # reset duplicate retry 
+            elif individual_validity == 1: # invalid node due to weight 
+                print("HEAVY BOI")
+                individual.pop()
+                retries -= 1 
+            elif individual_validity == 2: # invalid node due to duplicates
+                # invalid node due to duplicates
+                # TODO: replace 280 with a reasonable number based on number of nodes or weight:num_node ratio
+                if duplicate_retry > 280: # duplicates can occur due to chance so try again
+                    # too many duplicates found
+                    print(f"Could not max out the individual capacity len: {len(individual)}")
+                    break
+                duplicate_retry += 1
+                individual.pop()
+                
+        print(len(individual))
+        return individual
 
     def crossover(self):
         pass
 
     def mutation(self):
+        pass
+
+    def mutation_single_node_full(self, individual_node_id):
+        """
+            Fully mutates a single node's selected bags in the individual
+
+            Input: node_id (int)
+                The node to mutate
+        """
+
+        bag_length = len(self.UTIL.nodes[individual_node_id][3])
+
+        if bag_length == 1:
+            return [1]
+        
+        if bag_length == 0:
+            print("[0] No bags available for node " + str(individual_node_id) + "!")
+            return [0]
+        
+        # TODO: CHECK THIS FOR MORE THAN 1 BAG
+
+        # random chance 0 or 1 for each bag (50% chance each)
+        bags = [random.choice([0, 1]) for _ in range(bag_length)]
+
+        # one bag must be selected else impossible to visit
+        if sum(bags) == 0: 
+            bags[random.randint(0, bag_length-1)] = 1
+
+        return bags
+
+        # random chance 0 or 1
+
+
+        pass
+
+    def mutation_bags(self):
+        """
+            Mutates the bags of the individuals 
+
+            swaps the bags around to see if the solution improves 
+                DOES NOT CHANGE THE VISITED NODES
+        """
+
+        
         pass
 
     def selection(self):
@@ -142,3 +374,8 @@ class SMSEMOA:
 
     def selection(self):
         pass
+
+
+nodes, problem_dict = load_data(DIR + "a280-n279.txt")
+
+ga = GA(nodes, problem_dict)
