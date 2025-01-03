@@ -135,8 +135,11 @@ class Utils:
 
         for node in route:
             ws = node[1]
+
+            if len(self.nodes[node[0]-1][3]) == 0: continue
+
             for i in range(len(ws)):
-                weight += ws[i] * self.nodes[node[0]-1][i]
+                weight += ws[i] * self.nodes[node[0]-1][3][i][1]
 
         return weight
 
@@ -295,18 +298,56 @@ class GA:
 
         return bags
 
-    def mutation_bags(self):
+    def mutation_bags(self, individual_id, gene_id):
         """
             Mutates the bags of the individuals 
 
             swaps the bags around to see if the solution improves 
                 DOES NOT CHANGE THE VISITED NODES
         """
-        pass
+
+        individual = self.pop[individual_id]
+        
+        if len(individual) == 0: # too short to mutate 
+            raise ValueError("Individual is length 0")
+
+        gene = individual[gene_id]
+
+        # choose a random bit to flit (bag to pick or or not)
+        r = random.randint(0, len(gene[1])-1)
+
+        # flip the bit 1 -> 0 or 0 -> 1
+        gene[1][r] = 1 - gene[1][r]
+
+        # one bag must be selected else impossible to visit 
+        if sum(gene[1]) == 0:
+            gene[1][random.randint(0, len(gene[1])-1)] = 1
+
+        # replace the encoding
+        individual[3] = gene
+
+        print(f"Mutated: {gene}")
+
+        return individual
 
     def selection(self):
         pass
 
-nodes, problem_dict = load_data(DIR + "a280-n279.txt")
+nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
 
 ga = GA(nodes, problem_dict)
+
+ga.pop[0] = ga.mutation_bags(0, 0)
+ga.pop[0] = ga.mutation_bags(0, 0)
+ga.pop[0] = ga.mutation_bags(0, 0)
+ga.pop[0] = ga.mutation_bags(0, 0)
+ga.pop[0] = ga.mutation_bags(0, 0)
+ga.pop[0] = ga.mutation_bags(0, 0)
+ga.pop[0] = ga.mutation_bags(0, 0)
+ga.pop[0] = ga.mutation_bags(0, 0)
+ga.pop[0] = ga.mutation_bags(0, 0)
+ga.pop[0] = ga.mutation_bags(0, 0)
+ga.pop[0] = ga.mutation_bags(0, 0)
+ga.pop[0] = ga.mutation_bags(0, 0)
+ga.pop[0] = ga.mutation_bags(0, 0)
+
