@@ -1,6 +1,7 @@
 import csv 
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 
 DIR = "resources/" # + "test-example-n4.txt" # loading data
@@ -398,6 +399,68 @@ class GA:
             y.append(self.UTIL.fitness_calc_time(individual))
         
         return x, y
+
+
+def pareto_front(solutions):
+    """
+    Finds the Pareto front from a list of solutions.
+    """
+    pareto_front = []
+    
+    for i, sol_i in enumerate(solutions):
+        is_dominated = False
+        for j, sol_j in enumerate(solutions):
+            if np.all(np.array(sol_j) <= np.array(sol_i)) and np.any(np.array(sol_j) < np.array(sol_i)):
+                is_dominated = True
+                break
+        if not is_dominated:
+            pareto_front.append(sol_i)
+    
+    return pareto_front
+
+def get_consecutive_pareto_fronts(solutions):
+    fronts = []
+    remaining_solutions = solutions[:]
+
+    while remaining_solutions != []:
+        front = pareto_front(remaining_solutions)
+        remaining_solutions = [sublist for sublist in y if sublist not in x]
+        fronts.append(front)
+    
+    return fronts
+
+def plot_pareto_fronts(solutions, x_label="obj1", y_label="obj2"):
+    # Get consecutive Pareto fronts
+    pareto_fronts = get_consecutive_pareto_fronts(solutions)
+
+    # Plot all the solutions
+    solutions_np = np.array(solutions)
+    plt.scatter(solutions_np[:, 0], solutions_np[:, 1], color='gray', label="All solutions")
+
+    # colormap with distinct colours
+    cmap = plt.get_cmap('tab10', len(pareto_fronts)) 
+
+    # Plot each Pareto front with a line connecting the points 
+    for i, front in enumerate(pareto_fronts):
+        front_np = np.array(sorted(front, key=lambda x: x[0]))
+        color = cmap(i)  # Get the color for the i-th front
+        plt.scatter(front_np[:, 0], front_np[:, 1], label=f'Front {i+1}', color=color)
+        plt.plot(front_np[:, 0], front_np[:, 1], color=color, linestyle='-', marker='o')
+
+    # Labels and title
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title('Consecutive Pareto Fronts')
+
+    # Show legend
+    plt.legend()
+
+    # Show plot
+    plt.grid(True)
+    plt.show()
+
+
+
 nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
 
 ga = GA(nodes, problem_dict)
