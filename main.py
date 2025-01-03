@@ -131,7 +131,7 @@ class Utils:
             Output: int
         """
 
-        weight = 0
+        weight = 0.0
 
         for node in route:
             ws = node[1]
@@ -162,10 +162,19 @@ class Utils:
             Output: int
         """
 
-        profit = 0
+        profit = 0.0
+
+        # for node in route:
+        #     print(node)
+        #     profit += node[3][0][0]
 
         for node in route:
-            profit += node[3][0][0]
+            vs = node[1]
+
+            if len(self.nodes[node[0]-1][3]) == 0: continue
+
+            for i in range(len(vs)):
+                profit += vs[i] * self.nodes[node[0]-1][3][i][0]
 
         return profit
     
@@ -200,6 +209,30 @@ class Utils:
 
         return velocity
 
+    def fitness_calc_time(self, individual):
+        """
+            Calculates the fitness of the individual
+        """
+        
+        history = []
+        time = 0
+        weight = 0.0
+        velocity = self.problem_dict["SPEED_MAX"]
+
+        # picks up first item at time 0 with max speed 
+        history.append(individual[0])
+        weight += self.get_weight([individual[0]])
+
+        # print(f"Initial weight: {weight}")
+        # print(f"Initial time: {time}")
+        # print(f"Initial velocity: {velocity}")
+        # print(f"Initial history: {history}")
+
+        for i in range(1, len(individual)):
+            distance = self.get_distance(self.nodes[individual[i-1][0]-1], self.nodes[individual[i][0]-1])
+            time += distance / velocity
+            weight += self.get_weight([individual[i]])
+        return time
 
 class GA:
     """
@@ -352,26 +385,48 @@ class GA:
     def selection(self):
         pass
 
+    def gen_fitness(self):
+        """
+            Generates the fitness of the population
+        """
+
+        x = []
+        y = []
+
+        for individual in self.pop:
+            x.append(-self.UTIL.get_profit(individual))
+            y.append(self.UTIL.fitness_calc_time(individual))
+        
+        return x, y
 nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
 
 ga = GA(nodes, problem_dict)
 
-ga.pop[0] = ga.mutation_bags(0, 0)
-ga.pop[0] = ga.mutation_bags(0, 0)
-ga.pop[0] = ga.mutation_bags(0, 0)
-ga.pop[0] = ga.mutation_bags(0, 0)
-ga.pop[0] = ga.mutation_bags(0, 0)
-ga.pop[0] = ga.mutation_bags(0, 0)
-ga.pop[0] = ga.mutation_bags(0, 0)
-ga.pop[0] = ga.mutation_bags(0, 0)
-ga.pop[0] = ga.mutation_bags(0, 0)
-ga.pop[0] = ga.mutation_bags(0, 0)
-ga.pop[0] = ga.mutation_bags(0, 0)
-ga.pop[0] = ga.mutation_bags(0, 0)
-ga.pop[0] = ga.mutation_bags(0, 0)
+# ga.pop[0] = ga.mutation_bags(0, 0)
+# ga.pop[0] = ga.mutation_bags(0, 0)
+# ga.pop[0] = ga.mutation_bags(0, 0)
+# ga.pop[0] = ga.mutation_bags(0, 0)
+# ga.pop[0] = ga.mutation_bags(0, 0)
+# ga.pop[0] = ga.mutation_bags(0, 0)
+# ga.pop[0] = ga.mutation_bags(0, 0)
+# ga.pop[0] = ga.mutation_bags(0, 0)
+# ga.pop[0] = ga.mutation_bags(0, 0)
+# ga.pop[0] = ga.mutation_bags(0, 0)
+# ga.pop[0] = ga.mutation_bags(0, 0)
+# ga.pop[0] = ga.mutation_bags(0, 0)
+# ga.pop[0] = ga.mutation_bags(0, 0)
 
-print(ga.UTIL.__calc_velocity__(0))
-print(ga.UTIL.__calc_velocity__(10))
+fitness_time = ga.UTIL.fitness_calc_time(ga.pop[0])
 
-print(ga.UTIL.__calc_velocity__(ga.UTIL.problem_dict["CAPACITY"]))
-print(ga.UTIL.__calc_velocity__(ga.UTIL.problem_dict["CAPACITY"]))
+# print(ga.UTIL.__calc_velocity__(0))
+# print(ga.UTIL.__calc_velocity__(10))
+
+# print(ga.UTIL.__calc_velocity__(ga.UTIL.problem_dict["CAPACITY"]))
+# print(ga.UTIL.__calc_velocity__(ga.UTIL.problem_dict["CAPACITY"]))
+
+x, y = ga.gen_fitness()
+xy = [[xi, yi] for xi, yi in zip(x, y)]
+
+print("plotting")
+plot_pareto_fronts(xy, "-profit", "time")
+
