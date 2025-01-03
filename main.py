@@ -41,7 +41,7 @@ def load_data(file_name):
             "KNAPSACK_DATA_TYPE": KNAPSACK_DATA_TYPE,
             "DIMENSION": int(DIMENSION),
             "NUMBER_OF_ITEMS": int(NUMBER_OF_ITEMS),
-            "CAPACITY": int(CAPACITY),
+            "CAPACITY": float(CAPACITY),
             "SPEED_MIN": float(SPEED_MIN),
             "SPEED_MAX": float(SPEED_MAX),
             "RENTING_RATIO": float(RENTING_RATIO),
@@ -181,6 +181,25 @@ class Utils:
             return 1
         
         return 0
+    
+    def __calc_velocity__(self, weight):
+        """
+            Calculates the velocity of the individual
+        """
+
+        if weight <= 0:
+            return self.problem_dict["SPEED_MAX"]
+
+        W_MAX = self.problem_dict["SPEED_MAX"]
+        W_MIN = self.problem_dict["SPEED_MIN"]
+
+        velocity = W_MAX - (weight / self.problem_dict["CAPACITY"]) * (W_MAX - W_MIN)
+
+        if velocity < W_MIN or weight >= self.problem_dict["CAPACITY"]:
+            velocity = W_MIN
+
+        return velocity
+
 
 class GA:
     """
@@ -351,3 +370,8 @@ ga.pop[0] = ga.mutation_bags(0, 0)
 ga.pop[0] = ga.mutation_bags(0, 0)
 ga.pop[0] = ga.mutation_bags(0, 0)
 
+print(ga.UTIL.__calc_velocity__(0))
+print(ga.UTIL.__calc_velocity__(10))
+
+print(ga.UTIL.__calc_velocity__(ga.UTIL.problem_dict["CAPACITY"]))
+print(ga.UTIL.__calc_velocity__(ga.UTIL.problem_dict["CAPACITY"]))
