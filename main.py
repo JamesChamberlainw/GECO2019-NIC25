@@ -395,8 +395,8 @@ class GA:
         y = []
 
         for individual in self.pop:
-            x.append(-self.UTIL.get_profit(individual))
-            y.append(self.UTIL.fitness_calc_time(individual))
+            y.append(-self.UTIL.get_profit(individual))
+            x.append(self.UTIL.fitness_calc_time(individual))
         
         return x, y
 
@@ -429,38 +429,6 @@ def get_consecutive_pareto_fronts(solutions):
     
     return fronts
 
-def plot_pareto_fronts(solutions, x_label="obj1", y_label="obj2"):
-    # Get consecutive Pareto fronts
-    pareto_fronts = get_consecutive_pareto_fronts(solutions)
-
-    # Plot all the solutions
-    solutions_np = np.array(solutions)
-    plt.scatter(solutions_np[:, 0], solutions_np[:, 1], color='gray', label="All solutions")
-
-    # colormap with distinct colours
-    cmap = plt.get_cmap('tab10', len(pareto_fronts)) 
-
-    # Plot each Pareto front with a line connecting the points 
-    for i, front in enumerate(pareto_fronts):
-        front_np = np.array(sorted(front, key=lambda x: x[0]))
-        color = cmap(i)  # Get the color for the i-th front
-        plt.scatter(front_np[:, 0], front_np[:, 1], label=f'Front {i+1}', color=color)
-        plt.plot(front_np[:, 0], front_np[:, 1], color=color, linestyle='-', marker='o')
-
-    # Labels and title
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.title('Consecutive Pareto Fronts')
-
-    # Show legend
-    plt.legend()
-
-    # Show plot
-    plt.grid(True)
-    plt.show()
-
-
-
 nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
 
 ga = GA(nodes, problem_dict)
@@ -488,8 +456,36 @@ fitness_time = ga.UTIL.fitness_calc_time(ga.pop[0])
 # print(ga.UTIL.__calc_velocity__(ga.UTIL.problem_dict["CAPACITY"]))
 
 x, y = ga.gen_fitness()
-xy = [[xi, yi] for xi, yi in zip(x, y)]
+x_label = "time"
+y_label = "-profit"
 
-print("plotting")
-plot_pareto_fronts(xy, "-profit", "time")
+solutions = [[xi, yi] for xi, yi in zip(x, y)]
 
+# Get consecutive Pareto fronts
+pareto_fronts = get_consecutive_pareto_fronts(solutions)
+
+# Plot all the solutions
+solutions_np = np.array(solutions)
+plt.scatter(solutions_np[:, 0], solutions_np[:, 1], color='gray', label="All solutions")
+
+# colormap with distinct colours
+cmap = plt.get_cmap('tab10', len(pareto_fronts)) 
+
+# Plot each Pareto front with a line connecting the points 
+for i, front in enumerate(pareto_fronts):
+    front_np = np.array(sorted(front, key=lambda x: x[0]))
+    color = cmap(i)  # Get the color for the i-th front
+    plt.scatter(front_np[:, 0], front_np[:, 1], label=f'Front {i+1}', color=color)
+    plt.plot(front_np[:, 0], front_np[:, 1], color=color, linestyle='-', marker='o')
+
+# Labels and title
+plt.xlabel(x_label)
+plt.ylabel(y_label)
+plt.title('Consecutive Pareto Fronts')
+
+# Show legend
+plt.legend()
+
+# Show plot
+plt.grid(True)
+plt.show()
