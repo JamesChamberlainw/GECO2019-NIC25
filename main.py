@@ -89,6 +89,34 @@ def load_data(file_name):
             
         return nodes, problem_dict
 
+def pareto_front(solutions):
+    """
+    Finds the Pareto front from a list of solutions.
+    """
+    pareto_front = []
+    
+    for i, sol_i in enumerate(solutions):
+        is_dominated = False
+        for j, sol_j in enumerate(solutions):
+            if np.all(np.array(sol_j) <= np.array(sol_i)) and np.any(np.array(sol_j) < np.array(sol_i)):
+                is_dominated = True
+                break
+        if not is_dominated:
+            pareto_front.append(sol_i)
+    
+    return pareto_front
+
+def get_consecutive_pareto_fronts(solutions):
+    fronts = []
+    remaining_solutions = solutions[:]
+
+    while remaining_solutions != []:
+        front = pareto_front(remaining_solutions)
+        remaining_solutions = [sublist for sublist in remaining_solutions if sublist not in front]
+        fronts.append(front)
+    
+    return fronts
+
 class Utils:
     """
         Utils class
@@ -253,7 +281,7 @@ class Utils:
         """
             Returns the max number of locations a individual can visit 
         """
-        return problem_dict["DIMENSION"]-1 # 0 is our fist number so 280 -> 279 for index / len()
+        return problem_dict["DIMENSION"]-1 # 0 is our fist number so 280 -> 279 for index / len()    
 
 class GA:
     """
@@ -347,10 +375,8 @@ class GA:
                     break
                 duplicate_retry += 1
                 individual.pop()
-            
-        # print(self.UTIL.is_valid_individual(individual))
-        # print(f"weight {self.UTIL.get_weight(individual)} / {self.UTIL.get_max_weight()}")
-        return individual
+
+        return self.fix_individual_validity(individual) # final checks (should be clear but this is the init pop)
 
     def mutation_single_node_full(self, individual_node_id):
         """
@@ -510,11 +536,11 @@ class GA:
 
             # if still under weight try to add more 
             while self.UTIL.get_weight(new) < self.UTIL.get_max_weight():
-                individual = copy.deepcopy(new) # replace 
+                # replace 
+                individual = copy.deepcopy(new) 
 
                 # find new gene 
                 new = self.mutation_new_gene(new)
-                print(f"new gene check {self.UTIL.is_valid_individual(new)}")
             
             # left due to usefulness as debug code 
             # print(f"weight%: {self.UTIL.get_weight(individual) / self.UTIL.get_max_weight()}")
@@ -560,35 +586,6 @@ class GA:
             x.append(self.UTIL.fitness_calc_time(individual))
         
         return x, y
-
-
-def pareto_front(solutions):
-    """
-    Finds the Pareto front from a list of solutions.
-    """
-    pareto_front = []
-    
-    for i, sol_i in enumerate(solutions):
-        is_dominated = False
-        for j, sol_j in enumerate(solutions):
-            if np.all(np.array(sol_j) <= np.array(sol_i)) and np.any(np.array(sol_j) < np.array(sol_i)):
-                is_dominated = True
-                break
-        if not is_dominated:
-            pareto_front.append(sol_i)
-    
-    return pareto_front
-
-def get_consecutive_pareto_fronts(solutions):
-    fronts = []
-    remaining_solutions = solutions[:]
-
-    while remaining_solutions != []:
-        front = pareto_front(remaining_solutions)
-        remaining_solutions = [sublist for sublist in remaining_solutions if sublist not in front]
-        fronts.append(front)
-    
-    return fronts
 
 nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
 
