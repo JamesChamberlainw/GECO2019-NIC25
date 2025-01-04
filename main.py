@@ -446,14 +446,10 @@ class GA:
                 # random gene_ids lst 
                 r_x = random.randint(0, len(gene_ids)-1) # select set  
                 r_y = random.randint(0, len(gene_ids[r_x])-1) # select id 
-                individual.pop(r_y)
+                individual.pop(gene_ids[r_x][r_y])
                 
-                # remove gene from sublist 
-                new_gene_id = gene_ids[r_x].pop(r_y)
-
-                # remove gene sublist if its no longer repeated 
-                if len(new_gene_id) <= 1:
-                    gene_ids.pop(r_x)
+                # re-calc list 
+                gene_ids = self.UTIL.get_instances_of_repeated_gene(individual)
 
                 # if problem resolved go back to other checks 
                 if len(individual) > self.UTIL.get_max_locations():
@@ -468,26 +464,33 @@ class GA:
         flag_weight = 0
         flag_repeated = 0
 
-        # weight checking 
-        while self.UTIL.get_weight(individual) > self.UTIL.get_max_weight():
-            flag_weight = 1
-            # too heavy so need to drop a random gene
-            individual.pop(random.randint(0, len(individual)-1))
-
-        # repeated gene dropping 
+        # repeated gene dropping (random from remaining)
         while len(gene_ids) > 0:
             flag_repeated = 1 
             # random gene_ids lst 
             r_x = random.randint(0, len(gene_ids)-1) # select set  
             r_y = random.randint(0, len(gene_ids[r_x])-1) # select id 
-            individual.pop(r_y)
+            individual.pop(gene_ids[r_x][r_y])
             
-            # remove gene from sublist 
-            new_gene_id = gene_ids[r_x].pop(r_y)
+            # re-calc list 
+            gene_ids = self.UTIL.get_instances_of_repeated_gene(individual)
 
-            # remove gene sublist if its no longer repeated 
-            if len(gene_ids[r_x]) <= 1:
-                gene_ids.pop(r_x)
+
+        # weight checking / removal of excess 
+        while self.UTIL.get_weight(individual) > self.UTIL.get_max_weight():
+            flag_weight = 1
+            # too heavy so need to drop a random gene
+            individual.pop(random.randint(0, len(individual)-1))
+
+
+        # if not overweight and no repeated flag hit this is completed 
+        if flag_weight == 1 and flag_repeated == 0: # weights is fixed already and no repeated 
+            return individual
+        else:
+            # individual still unfit 
+            print("unfit")
+            print(f"weight%: {self.UTIL.get_weight(individual) / self.UTIL.get_max_weight()}")
+            print(len(individual))
         
         if flag_weight == 0 or flag_repeated == 1:
             print(f"flags: {flag_weight} : {flag_repeated}")
