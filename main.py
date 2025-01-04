@@ -424,8 +424,9 @@ def get_consecutive_pareto_fronts(solutions):
 
     while remaining_solutions != []:
         front = pareto_front(remaining_solutions)
-        remaining_solutions = [sublist for sublist in y if sublist not in x]
+        remaining_solutions = [sublist for sublist in remaining_solutions if sublist not in front]
         fronts.append(front)
+        print(len(remaining_solutions))
     
     return fronts
 
