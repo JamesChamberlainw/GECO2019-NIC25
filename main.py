@@ -221,22 +221,12 @@ class Utils:
         """
 
         indices_dict = defaultdict(list)
-        # print("\n\n\n\n\n")
-        # for gene_x in individual:
-        #     print(gene_x)
 
         lst = [x[0] for x in individual]
 
         for idx, value in enumerate(lst):
             indices_dict[value].append(idx)
-
-
-        # print("\n\n\n\n\n")
-        # for indc in indices_dict.values():
-        #     # print(f"individual: ")
-        #     # print(indc)
-        #     for idc in indc:
-        #         print(f"{idc} :: {individual[idc]}")            
+        
 
         return [indices for indices in indices_dict.values() if len(indices) > 1]
 
