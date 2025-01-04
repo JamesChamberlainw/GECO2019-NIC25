@@ -119,7 +119,7 @@ class Utils:
         
         # collect the node ids
         list = [x[0] for x in individual]
-        # TODO: bugfix cannot test external due to "unhashable type: 'list'" bullshit error on SAME IDENTICAL DATA 
+
         if len(list) == len(set(list)):
             return False
         else:
@@ -420,14 +420,15 @@ class GA:
             Note: checks need to be done after to check if this is a valid individual
         """
 
-        # TODO: Check code for errors 
-
+        # split location 
         r = random.randint(0, len(individual))
         
-        new = individual[:r] + self.generate_gene() + individual[r:]
+        # first attempt 
+        new = individual[:r] + [self.generate_gene()] + individual[r:]
 
-        while len(self.UTIL.get_instances_of_repeated_gene()) > 0:
-            new = individual[:r] + self.generate_gene() + individual[r:]      
+        # loop till a gene is found that can fit 
+        while self.UTIL.__has_duplicates__(new) == True:
+            new = individual[:r] + [self.generate_gene()] + individual[r:]      
 
         return new
 
@@ -435,6 +436,9 @@ class GA:
         """
             Fixes an Individual (harsh - full checks)
         """
+
+        flag_weight = 0
+        flag_repeated = 0
 
         # get repeated gene ids
         gene_ids = self.UTIL.get_instances_of_repeated_gene(individual)
@@ -461,8 +465,6 @@ class GA:
                 r = random.randint(0, len(individual)-1)
                 individual.pop(r)
         
-        flag_weight = 0
-        flag_repeated = 0
 
         # repeated gene dropping (random from remaining)
         while len(gene_ids) > 0:
@@ -487,15 +489,22 @@ class GA:
         if flag_weight == 1 and flag_repeated == 0: # weights is fixed already and no repeated 
             return individual
         else:
-            # individual still unfit 
-            print("unfit")
-            print(f"weight%: {self.UTIL.get_weight(individual) / self.UTIL.get_max_weight()}")
-            print(len(individual))
-        
-        if flag_weight == 0 or flag_repeated == 1:
-            print(f"flags: {flag_weight} : {flag_repeated}")
-            # weight flag not hit so there is a chance that the individual is under populated
-            # TODO: repopulate (? maybe ?)
+            # repopulate with genes to add more to the bag
+            new = copy.deepcopy(individual)
+
+            # if still under weight try to add more 
+            while self.UTIL.get_weight(new) < self.UTIL.get_max_weight():
+                individual = copy.deepcopy(new) # replace 
+
+                # find new gene 
+                new = self.mutation_new_gene(new)
+                print(f"new gene check {self.UTIL.is_valid_individual(new)}")
+            
+            # left due to usefulness as debug code 
+            # print(f"weight%: {self.UTIL.get_weight(individual) / self.UTIL.get_max_weight()}")
+            # print(len(individual))        
+        # if flag_weight == 0 or flag_repeated == 1:
+        #     print(f"flags: {flag_weight} : {flag_repeated}")
 
         return individual
 
