@@ -89,11 +89,12 @@ def load_data(file_name):
             
         return nodes, problem_dict
 
-def pareto_front(solutions):
+def pareto_front(solutions, indices):
     """
     Finds the Pareto front from a list of solutions.
     """
     pareto_front = []
+    pareto_front_ids = []
     
     for i, sol_i in enumerate(solutions):
         is_dominated = False
@@ -103,19 +104,26 @@ def pareto_front(solutions):
                 break
         if not is_dominated:
             pareto_front.append(sol_i)
+            pareto_front_ids.append(indices[i])
     
-    return pareto_front
+    return pareto_front, pareto_front_ids
 
 def get_consecutive_pareto_fronts(solutions):
+
     fronts = []
+    front_indices = []
+
     remaining_solutions = solutions[:]
+    remaining_front_indices = list(range(len(solutions)))
 
     while remaining_solutions != []:
-        front = pareto_front(remaining_solutions)
+        front, front_indcy = pareto_front(remaining_solutions, remaining_front_indices)
         remaining_solutions = [sublist for sublist in remaining_solutions if sublist not in front]
+        remaining_front_indices = [sublist for sublist in remaining_front_indices if sublist not in front_indcy]
         fronts.append(front)
+        front_indices.append(front_indcy)
     
-    return fronts
+    return fronts, front_indices
 
 class Utils:
     """
@@ -295,7 +303,7 @@ class GA:
     pop_size = 100
     num_nodes = 0
 
-    def __init__(self, nodes, problem_dict, pop_size = 100):
+    def __init__(self, nodes, problem_dict, pop_size = 250):
         """
             Initializes the GA with the nodes and problem_dict
 
@@ -569,9 +577,63 @@ class GA:
         print(self.UTIL.is_valid_individual(child))
 
         return child
+    
+    def select_random(self, front, num_to_select):
+        """
+            Selects random elements up till num_to_select
+        """
 
-    def selection(self):
-        pass
+        if len(front) < num_to_select:
+            raise "ERROR: invalid front provided: must comply with len(front) < num_to_select "
+        
+        selected_front = []
+
+        while len(selected_front) < num_to_select:
+            r = random.randint(0, len(front)-1)
+            selected_front.append(front.pop(r))
+
+        return selected_front
+
+
+    def selection(self, pop_size):
+        """
+            Survival Function 
+        """
+
+        # get fitness 
+        x, y = self.gen_fitness()
+        xy = [[xi, yi] for xi, yi in zip(x, y)]
+        print(len(xy))
+        # Get consecutive Pareto fronts
+        _, front_ids = get_consecutive_pareto_fronts(xy)
+        print(front_ids)
+
+        solutions = []
+
+        for i in range(len(front_ids)):
+            # print(solutions) # debug code #
+            # print(f"{len(solutions)} / {pop_size}")  # debug code #
+            if len(solutions) + len(front_ids[i]) <= pop_size:
+                # no checks needed as all are best solutions found 
+                for fr in front_ids[i]:
+                    solutions.append(fr)
+            elif ((len(solutions) + len(front_ids[i])) >= pop_size) and (len(solutions) < pop_size):
+                # Select from final front 
+                _front_ids = self.select_random(front_ids[i], (pop_size - len(solutions)))
+                for fr in _front_ids:
+                    solutions.append(fr)
+            else:
+                # complete 
+                break
+            # else:
+            #     print("adding more 1")
+            #     # final front check TODO: add S-Metric rather than random for SMS-EMOA
+            #     _front_ids = self.select_random(front_ids[i], (pop_size - len(solutions)))
+            #     for fr in _front_ids:
+            #         solutions.append(fr)
+                    
+
+        print(f"length {len(solutions)}")
 
     def gen_fitness(self):
         """
@@ -587,61 +649,29 @@ class GA:
         
         return x, y
 
+
+# ==========================================================================
+#   MAIN
+# ==========================================================================
+
+
 nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
 
-ga = GA(nodes, problem_dict)
+ga = GA(nodes, problem_dict, pop_size=50)
 
-# __gene = ga.generate_gene()
-# print(__gene)
-# __gene = ga.generate_gene()
-# print(__gene)
-# __gene = ga.generate_gene()
-# print(__gene)
-# __gene = ga.generate_gene()
-# print(__gene)
-# __gene = ga.generate_gene()
-# print(__gene)
-# __gene = ga.generate_gene()
-# print(__gene)
-# __gene = ga.generate_gene()
-# print(__gene)
-# __gene = ga.generate_gene()
-# print(__gene)
-# __gene = ga.generate_gene()
-# print(__gene)
-
-print(ga.UTIL.is_valid_individual(ga.crossover(ga.pop[0], ga.pop[1])))
-# print(len(ga.pop[0]))
-# print(ga.UTIL.is_valid_individual(ga.pop[0]))
-# print(ga.UTIL.get_instances_of_repeated_gene(ga.pop[0]))
+front = ga.selection(25)
 
 
-# ga.pop[0] = ga.mutation_bags(0, 0)
-# ga.pop[0] = ga.mutation_bags(0, 0)
-# ga.pop[0] = ga.mutation_bags(0, 0)
-# ga.pop[0] = ga.mutation_bags(0, 0)
-# ga.pop[0] = ga.mutation_bags(0, 0)
-# ga.pop[0] = ga.mutation_bags(0, 0)
-# ga.pop[0] = ga.mutation_bags(0, 0)
-# ga.pop[0] = ga.mutation_bags(0, 0)
-# ga.pop[0] = ga.mutation_bags(0, 0)
-# ga.pop[0] = ga.mutation_bags(0, 0)
-# ga.pop[0] = ga.mutation_bags(0, 0)
-# ga.pop[0] = ga.mutation_bags(0, 0)
-# ga.pop[0] = ga.mutation_bags(0, 0)
 
-print(len(ga.pop[0]))
-print(len(ga.pop[1]))
 
-ga.pop[0] = ga.crossover(ga.pop[0], ga.pop[1])
 
-# fitness_time = ga.UTIL.fitness_calc_time(ga.pop[0])
 
-# print(ga.UTIL.__calc_velocity__(0))
-# print(ga.UTIL.__calc_velocity__(10))
+# ga.pop_size = 100
 
-# print(ga.UTIL.__calc_velocity__(ga.UTIL.problem_dict["CAPACITY"]))
-# print(ga.UTIL.__calc_velocity__(ga.UTIL.problem_dict["CAPACITY"]))
+# ==========================================================================
+#   VIS
+# ==========================================================================
+
 
 x, y = ga.gen_fitness()
 x_label = "time"
@@ -650,7 +680,7 @@ y_label = "-profit"
 solutions = [[xi, yi] for xi, yi in zip(x, y)]
 
 # Get consecutive Pareto fronts
-pareto_fronts = get_consecutive_pareto_fronts(solutions)
+pareto_fronts, _ = get_consecutive_pareto_fronts(solutions)
 
 # Plot all the solutions
 solutions_np = np.array(solutions)
