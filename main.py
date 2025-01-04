@@ -3,6 +3,9 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 
+import copy
+from collections import defaultdict
+
 
 DIR = "resources/" # + "test-example-n4.txt" # loading data
 
@@ -116,7 +119,7 @@ class Utils:
         
         # collect the node ids
         list = [x[0] for x in individual]
-
+        # TODO: bugfix cannot test external due to "unhashable type: 'list'" bullshit error on SAME IDENTICAL DATA 
         if len(list) == len(set(list)):
             return False
         else:
@@ -143,6 +146,12 @@ class Utils:
                 weight += ws[i] * self.nodes[node[0]-1][3][i][1]
 
         return weight
+    
+    def get_max_weight(self):
+        """
+            returns max weight / capacity 
+        """
+        return problem_dict["CAPACITY"]
 
     def get_distance(self, node1, node2):
         """
@@ -164,10 +173,6 @@ class Utils:
         """
 
         profit = 0.0
-
-        # for node in route:
-        #     print(node)
-        #     profit += node[3][0][0]
 
         for node in route:
             vs = node[1]
@@ -209,6 +214,31 @@ class Utils:
             velocity = W_MIN
 
         return velocity
+    
+    def get_instances_of_repeated_gene(self, individual):
+        """
+            Finds the instances of all repeated genes (not including the first instance)
+        """
+
+        indices_dict = defaultdict(list)
+        # print("\n\n\n\n\n")
+        # for gene_x in individual:
+        #     print(gene_x)
+
+        lst = [x[0] for x in individual]
+
+        for idx, value in enumerate(lst):
+            indices_dict[value].append(idx)
+
+
+        # print("\n\n\n\n\n")
+        # for indc in indices_dict.values():
+        #     # print(f"individual: ")
+        #     # print(indc)
+        #     for idc in indc:
+        #         print(f"{idc} :: {individual[idc]}")            
+
+        return [indices for indices in indices_dict.values() if len(indices) > 1]
 
     def fitness_calc_time(self, individual):
         """
@@ -224,16 +254,17 @@ class Utils:
         history.append(individual[0])
         weight += self.get_weight([individual[0]])
 
-        # print(f"Initial weight: {weight}")
-        # print(f"Initial time: {time}")
-        # print(f"Initial velocity: {velocity}")
-        # print(f"Initial history: {history}")
-
         for i in range(1, len(individual)):
             distance = self.get_distance(self.nodes[individual[i-1][0]-1], self.nodes[individual[i][0]-1])
             time += distance / velocity
             weight += self.get_weight([individual[i]])
         return time
+    
+    def get_max_locations(self):
+        """
+            Returns the max number of locations a individual can visit 
+        """
+        return problem_dict["DIMENSION"]-1 # 0 is our fist number so 280 -> 279 for index / len()
 
 class GA:
     """
@@ -291,7 +322,7 @@ class GA:
 
         incomplete = True
         while incomplete:
-            # generate node
+            # generate node/gene
             r = random.randint(0, self.num_nodes-1)
 
             if r not in individual_id:
