@@ -524,42 +524,6 @@ class GA:
 
         print(self.UTIL.is_valid_individual(child))
 
-        # # Valid Child? 
-        # child_validity = self.UTIL.is_valid_individual(child)
-        # if child_validity == 0:
-        #     # rare but possible 
-        #     return child
-        
-        # elif child_validity == 1:
-        #     # get genes that are unique (this will be the repeat locations)
-        #     gene_ids = self.UTIL.get_instances_of_repeated_gene(child)
-
-        #     if self.UTIL.get_weight(child) > self.UTIL.get_max_weight():
-        #         # first remove repeated genes 
-        #         while gene_ids > 0:
-        #             pop_id = 
-
-        #     # generate new genes if not feasible   
-        #     while len(gene_ids) > 0:
-        #         # regenerate genes
-        #         for gene_id in gene_ids:
-        #             child[gene_id] = self.generate_gene()
-                
-        #         gene_ids = self.UTIL.get_instances_of_repeated_gene(child)
-
-        # # weight checks 
-        # while self.UTIL.get_weight(child) > self.UTIL.get_max_weight():
-        #     # too heavy so need to drop a random gene
-        #     print(len(child))
-        #     child.pop(random.randint(0, len(child)-1))
-
-        # retries = 3
-        # while retries > 0:
-        #     # TODO try to populate a random gene (?)
-        #     # attempt to repopulate (?) if weight goes too low 
-        #     retries = -1
-        #     pass
-
         return child
 
     def selection(self):
