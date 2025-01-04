@@ -306,6 +306,13 @@ class GA:
             individual = self.generate_individual()
             self.pop.append(individual)
 
+    def generate_gene(self):
+        """
+            generates a single gene
+        """
+        gene_id = random.randint(0, self.num_nodes-1)
+        return [gene_id, self.mutation_single_node_full(gene_id)]
+
     def generate_individual(self, retries = 3):
         """
             Generates a new individual with the given nodes
@@ -351,7 +358,9 @@ class GA:
                     break
                 duplicate_retry += 1
                 individual.pop()
-                
+            
+        # print(self.UTIL.is_valid_individual(individual))
+        # print(f"weight {self.UTIL.get_weight(individual)} / {self.UTIL.get_max_weight()}")
         return individual
 
     def mutation_single_node_full(self, individual_node_id):
@@ -413,6 +422,145 @@ class GA:
         print(f"Mutated: {gene}")
 
         return individual
+    
+    def mutation_new_gene(self, individual):
+        """
+            Mutation adds a new gene into a position in the individual 
+
+            Note: checks need to be done after to check if this is a valid individual
+        """
+
+        # TODO: Check code for errors 
+
+        r = random.randint(0, len(individual))
+        
+        new = individual[:r] + self.generate_gene() + individual[r:]
+
+        while len(self.UTIL.get_instances_of_repeated_gene()) > 0:
+            new = individual[:r] + self.generate_gene() + individual[r:]      
+
+        return new
+
+    def fix_individual_validity(self, individual):
+        """
+            Fixes an Individual (harsh - full checks)
+        """
+
+        # get repeated gene ids
+        gene_ids = self.UTIL.get_instances_of_repeated_gene(individual)
+
+        # if too large of an individual to have unique genes
+        if len(individual) > self.UTIL.get_max_locations():
+            # drop repeated first
+            while len(gene_ids) > 0:
+                # random gene_ids lst 
+                r_x = random.randint(0, len(gene_ids)-1) # select set  
+                r_y = random.randint(0, len(gene_ids[r_x])-1) # select id 
+                individual.pop(r_y)
+                
+                # remove gene from sublist 
+                new_gene_id = gene_ids[r_x].pop(r_y)
+
+                # remove gene sublist if its no longer repeated 
+                if len(new_gene_id) <= 1:
+                    gene_ids.pop(r_x)
+
+                # if problem resolved go back to other checks 
+                if len(individual) > self.UTIL.get_max_locations():
+                    break
+            
+            # if still occurs 
+            while len(individual) > self.UTIL.get_max_locations():
+                # drop random genes 
+                r = random.randint(0, len(individual)-1)
+                individual.pop(r)
+        
+        flag_weight = 0
+        flag_repeated = 0
+
+        # weight checking 
+        while self.UTIL.get_weight(individual) > self.UTIL.get_max_weight():
+            flag_weight = 1
+            # too heavy so need to drop a random gene
+            individual.pop(random.randint(0, len(individual)-1))
+
+        # repeated gene dropping 
+        while len(gene_ids) > 0:
+            flag_repeated = 1 
+            # random gene_ids lst 
+            r_x = random.randint(0, len(gene_ids)-1) # select set  
+            r_y = random.randint(0, len(gene_ids[r_x])-1) # select id 
+            individual.pop(r_y)
+            
+            # remove gene from sublist 
+            new_gene_id = gene_ids[r_x].pop(r_y)
+
+            # remove gene sublist if its no longer repeated 
+            if len(gene_ids[r_x]) <= 1:
+                gene_ids.pop(r_x)
+        
+        if flag_weight == 0 or flag_repeated == 1:
+            print(f"flags: {flag_weight} : {flag_repeated}")
+            # weight flag not hit so there is a chance that the individual is under populated
+            # TODO: repopulate (? maybe ?)
+
+        return individual
+
+    def crossover(self, parent1, parent2):
+        """
+            Crossover where produced child is one side parent1 and the other parent2
+        
+            Note: parent1 and parent2 should be selected randomly as it will always take the first half of parent1 and the second half of parent2 
+            then splice them together. Plus error checking to ensure it is
+        """
+
+        # choose a random point to crossover
+        r = random.randint(0, len(parent1)-1)
+
+        # create the child
+        child = parent1[:r] + parent2[r:]
+
+        child = self.fix_individual_validity(child)
+
+        print(self.UTIL.is_valid_individual(child))
+
+        # # Valid Child? 
+        # child_validity = self.UTIL.is_valid_individual(child)
+        # if child_validity == 0:
+        #     # rare but possible 
+        #     return child
+        
+        # elif child_validity == 1:
+        #     # get genes that are unique (this will be the repeat locations)
+        #     gene_ids = self.UTIL.get_instances_of_repeated_gene(child)
+
+        #     if self.UTIL.get_weight(child) > self.UTIL.get_max_weight():
+        #         # first remove repeated genes 
+        #         while gene_ids > 0:
+        #             pop_id = 
+
+        #     # generate new genes if not feasible   
+        #     while len(gene_ids) > 0:
+        #         # regenerate genes
+        #         for gene_id in gene_ids:
+        #             child[gene_id] = self.generate_gene()
+                
+        #         gene_ids = self.UTIL.get_instances_of_repeated_gene(child)
+
+        # # weight checks 
+        # while self.UTIL.get_weight(child) > self.UTIL.get_max_weight():
+        #     # too heavy so need to drop a random gene
+        #     print(len(child))
+        #     child.pop(random.randint(0, len(child)-1))
+
+        # retries = 3
+        # while retries > 0:
+        #     # TODO try to populate a random gene (?)
+        #     # attempt to repopulate (?) if weight goes too low 
+        #     retries = -1
+        #     pass
+
+        return child
 
     def selection(self):
         pass
@@ -464,6 +612,31 @@ nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
 
 ga = GA(nodes, problem_dict)
 
+# __gene = ga.generate_gene()
+# print(__gene)
+# __gene = ga.generate_gene()
+# print(__gene)
+# __gene = ga.generate_gene()
+# print(__gene)
+# __gene = ga.generate_gene()
+# print(__gene)
+# __gene = ga.generate_gene()
+# print(__gene)
+# __gene = ga.generate_gene()
+# print(__gene)
+# __gene = ga.generate_gene()
+# print(__gene)
+# __gene = ga.generate_gene()
+# print(__gene)
+# __gene = ga.generate_gene()
+# print(__gene)
+
+print(ga.UTIL.is_valid_individual(ga.crossover(ga.pop[0], ga.pop[1])))
+# print(len(ga.pop[0]))
+# print(ga.UTIL.is_valid_individual(ga.pop[0]))
+# print(ga.UTIL.get_instances_of_repeated_gene(ga.pop[0]))
+
+
 # ga.pop[0] = ga.mutation_bags(0, 0)
 # ga.pop[0] = ga.mutation_bags(0, 0)
 # ga.pop[0] = ga.mutation_bags(0, 0)
@@ -478,7 +651,12 @@ ga = GA(nodes, problem_dict)
 # ga.pop[0] = ga.mutation_bags(0, 0)
 # ga.pop[0] = ga.mutation_bags(0, 0)
 
-fitness_time = ga.UTIL.fitness_calc_time(ga.pop[0])
+print(len(ga.pop[0]))
+print(len(ga.pop[1]))
+
+ga.pop[0] = ga.crossover(ga.pop[0], ga.pop[1])
+
+# fitness_time = ga.UTIL.fitness_calc_time(ga.pop[0])
 
 # print(ga.UTIL.__calc_velocity__(0))
 # print(ga.UTIL.__calc_velocity__(10))
