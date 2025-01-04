@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 import copy
 from collections import defaultdict
 
+import sys
+sys.setrecursionlimit(10000)  # Increase recursion limit to 2000
+
 DIR = "resources/" # + "test-example-n4.txt" # loading data
 
 def load_data(file_name):
@@ -463,14 +466,16 @@ class GA:
         while self.UTIL.__has_duplicates__(new) == True:
             new = individual[:r] + [self.generate_gene()] + individual[r:]      
 
+        # new = self.fix_individual_validity(new)
+
         return new
 
-    def mutation_replace_gene(self, individual, num_mutations):
+    def mutation_replace_gene(self, individual):
         """
             Standard single gene mutation and removal
         """
         # remove random gene 
-        r = random.randint(0, len(individual))
+        r = random.randint(0, len(individual)-1)
 
         # first attempt 
         new = individual
@@ -540,21 +545,15 @@ class GA:
             return individual
         else:
             # repopulate with genes to add more to the bag
-            new = copy.deepcopy(individual)
+            new = individual # TODO: deepcopy needed? 
 
             # if still under weight try to add more 
             while self.UTIL.get_weight(new) < self.UTIL.get_max_weight():
                 # replace 
-                individual = copy.deepcopy(new) 
+                individual = new # TODO: deepcopy? 
 
                 # find new gene 
                 new = self.mutation_new_gene(new)
-            
-            # left due to usefulness as debug code 
-            # print(f"weight%: {self.UTIL.get_weight(individual) / self.UTIL.get_max_weight()}")
-            # print(len(individual))        
-        # if flag_weight == 0 or flag_repeated == 1:
-        #     print(f"flags: {flag_weight} : {flag_repeated}")
 
         return individual
 
@@ -625,13 +624,6 @@ class GA:
             else:
                 # complete 
                 break
-            # else:
-            #     print("adding more 1")
-            #     # final front check TODO: add S-Metric rather than random for SMS-EMOA
-            #     _front_ids = self.select_random(front_ids[i], (pop_size - len(solutions)))
-            #     for fr in _front_ids:
-            #         solutions.append(fr)
-                    
 
         print(f"length {len(solutions)}")
 
@@ -666,7 +658,6 @@ front = ga.selection(25)
 
 
 
-# ga.pop_size = 100
 
 # ==========================================================================
 #   VIS
