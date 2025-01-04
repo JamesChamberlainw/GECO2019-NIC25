@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import copy
 from collections import defaultdict
 
-
 DIR = "resources/" # + "test-example-n4.txt" # loading data
 
 def load_data(file_name):
@@ -431,6 +430,23 @@ class GA:
             new = individual[:r] + [self.generate_gene()] + individual[r:]      
 
         return new
+
+    def mutation_replace_gene(self, individual, num_mutations):
+        """
+            Standard single gene mutation and removal
+        """
+        # remove random gene 
+        r = random.randint(0, len(individual))
+
+        # first attempt 
+        new = individual
+        new[r] = self.generate_gene()
+
+        # loop till a gene is found that can fit 
+        while self.UTIL.__has_duplicates__(new) == True:
+            new[r] = self.generate_gene()
+
+        return new 
 
     def fix_individual_validity(self, individual):
         """
