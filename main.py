@@ -426,7 +426,6 @@ def get_consecutive_pareto_fronts(solutions):
         front = pareto_front(remaining_solutions)
         remaining_solutions = [sublist for sublist in remaining_solutions if sublist not in front]
         fronts.append(front)
-        print(len(remaining_solutions))
     
     return fronts
 
