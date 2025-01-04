@@ -573,8 +573,6 @@ class GA:
 
         child = self.fix_individual_validity(child)
 
-        print(self.UTIL.is_valid_individual(child))
-
         return child
     
     def select_random(self, front, num_to_select):
@@ -593,14 +591,13 @@ class GA:
 
         return selected_front
 
-
-    def selection(self, pop_size):
+    def selection(self, pop, pop_size):
         """
             Survival Function 
         """
 
         # get fitness 
-        x, y = self.gen_fitness()
+        x, y = self.gen_fitness(pop)
         xy = [[xi, yi] for xi, yi in zip(x, y)]
         print(len(xy))
         # Get consecutive Pareto fronts
@@ -627,7 +624,75 @@ class GA:
 
         print(f"length {len(solutions)}")
 
-    def gen_fitness(self):
+    def generation(self):
+        """
+            Perform a single Generation 
+        """
+
+        num_genes_mutation = 5  # genes to attempt to mutate 
+
+        child_pop = []
+
+        # generate new population
+        # TODO HERE 100 (intial) + 50 mutation radom for x number genes + 50 crossover + 50 bag mutation
+        child_pop.append(self.pop)
+        
+        print()
+        # mutation_replace_gene
+        for i in range(50):
+            r = random.randint(0, len(self.pop))
+            child = self.pop[r]
+
+            for j in range(num_genes_mutation):
+                child = self.mutation_replace_gene(child) 
+
+            child_pop.append(child)
+
+        # crossover
+        for i in range(50):
+            r1 = random.randint(0, len(self.pop)-1)
+            r2 = random.randint(0,  len(self.pop)-1)
+
+            if r1 == r2:
+                i -= 1
+                continue
+
+            p1 = self.pop[r1]
+            p2 = self.pop[r2]
+
+
+            # crossover
+            child = self.crossover(p1, p2)
+
+            child_pop.append(child)
+
+        # knapsack 
+        for i in range(50):
+            # r = random.randint(0, len(self.pop))
+            # child = self.pop[r]
+
+            if len(child[1]) > 1:
+                child = self.mutation_bags(r, random.randint(0, len(self.pop[r])-1))
+                child_pop.append(child)
+            
+
+        # drop all non-unique 
+        child_pop = list(set(child_pop))
+        
+        # selection 
+        new_pop = []
+
+        # select next generation 
+        new_pop_ids = self.selection(child_pop, self.pop_size)
+
+        for id in new_pop_ids:
+            new_pop.append(child_pop[id])
+
+        self.pop = new_pop
+        print(len(new_pop))
+
+
+    def gen_fitness(self, pop=None):
         """
             Generates the fitness of the population
         """
@@ -635,7 +700,10 @@ class GA:
         x = []
         y = []
 
-        for individual in self.pop:
+        if pop is None:
+            pop = self.pop
+
+        for individual in pop:
             y.append(-self.UTIL.get_profit(individual))
             x.append(self.UTIL.fitness_calc_time(individual))
         
@@ -649,14 +717,47 @@ class GA:
 
 nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
 
-ga = GA(nodes, problem_dict, pop_size=50)
+ga = GA(nodes, problem_dict, pop_size=250)
 
-front = ga.selection(25)
+# front = ga.selection(25)
 
+for i in range(10):
+    ga.generation()
 
+    x, y = ga.gen_fitness()
+    x_label = "time"
+    y_label = "-profit"
 
+    solutions = [[xi, yi] for xi, yi in zip(x, y)]
 
+    # Get consecutive Pareto fronts
+    pareto_fronts, _ = get_consecutive_pareto_fronts(solutions)
 
+    # Plot all the solutions
+    solutions_np = np.array(solutions)
+    plt.scatter(solutions_np[:, 0], solutions_np[:, 1], color='gray', label="All solutions")
+
+    # colormap with distinct colours
+    cmap = plt.get_cmap('tab10', len(pareto_fronts)) 
+
+    # Plot each Pareto front with a line connecting the points 
+    for i, front in enumerate(pareto_fronts):
+        front_np = np.array(sorted(front, key=lambda x: x[0]))
+        color = cmap(i)  # Get the color for the i-th front
+        plt.scatter(front_np[:, 0], front_np[:, 1], label=f'Front {i+1}', color=color)
+        plt.plot(front_np[:, 0], front_np[:, 1], color=color, linestyle='-', marker='o')
+
+    # Labels and title
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title('Consecutive Pareto Fronts')
+
+    # Show legend
+    plt.legend()
+
+    # Show plot
+    plt.grid(True)
+    plt.show()
 
 
 # ==========================================================================
