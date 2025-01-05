@@ -809,50 +809,6 @@ nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
 
 ga = GA(nodes, problem_dict, pop_size=200, dyn_crossover=2, dyn_encoding=2, dyn_mutation=2)
 
-# front = ga.selection(25)
-
-# for i in range(250):
-#     print(f"GENERATION: {i}")
-#     ga.generation()
-
-    # x, y = ga.gen_fitness()
-    # x_label = "time"
-    # y_label = "-profit"
-
-    # solutions = [[xi, yi] for xi, yi in zip(x, y)]
-
-    # # # #  print(f"solution len: {len(solutions)}")
-
-    # # Get consecutive Pareto fronts
-    # pareto_fronts, _ = get_consecutive_pareto_fronts(solutions)
-
-    # # Plot all the solutions
-    # solutions_np = np.array(solutions)
-    # plt.scatter(solutions_np[:, 0], solutions_np[:, 1], color='gray', label="All solutions")
-
-    # # colormap with distinct colours
-    # cmap = plt.get_cmap('tab10', len(pareto_fronts)) 
-
-    # # Plot each Pareto front with a line connecting the points 
-    # for i, front in enumerate(pareto_fronts):
-    #     front_np = np.array(sorted(front, key=lambda x: x[0]))
-    #     color = cmap(i)  # Get the color for the i-th front
-    #     plt.scatter(front_np[:, 0], front_np[:, 1], label=f'Front {i+1}', color=color)
-    #     plt.plot(front_np[:, 0], front_np[:, 1], color=color, linestyle='-', marker='o')
-
-    # # Labels and title
-    # plt.xlabel(x_label)
-    # plt.ylabel(y_label)
-    # plt.title('Consecutive Pareto Fronts')
-
-    # # Show legend
-    # plt.legend()
-
-    # # Show plot
-    # plt.grid(True)
-    # plt.show()
-
-
 # ==========================================================================
 #   VIS
 # ==========================================================================
