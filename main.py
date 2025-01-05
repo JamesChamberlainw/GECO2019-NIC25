@@ -3,12 +3,7 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 
-# import threading
-# import copy
-
 from collections import defaultdict
-
-# from pyhv import Hypervolume
 
 import sys
 sys.setrecursionlimit(10000)  # Increase recursion limit to 2000
@@ -810,7 +805,7 @@ class GA:
 #   VIS
 # ==========================================================================
 
-def display(ga, title):
+def display(ga, title="Consecutive Pareto Fronts"):
     """
         Visualisation Function 
     """
@@ -852,15 +847,6 @@ def display(ga, title):
     plt.grid(True)
     plt.show()
 
-# def plot_multi_thread(ga, title="Consecutive Pareto Fronts"):
-#     """
-#         Multi-Threading for plotting # buggy 
-#     """
-#     ga_deep = copy.deepcopy(ga)
-#     plot_thread = threading.Thread(target=display, args=(ga_deep, title))
-#     plot_thread.start()
-
-
 # ==========================================================================
 #   MAIN
 # ==========================================================================
@@ -874,12 +860,12 @@ ga = GA(nodes, problem_dict, pop_size=200, dyn_crossover=2, dyn_encoding=2, dyn_
 for i in range(100):
     ga.generation()
 
-    # copy and then run on aother thread indipendnatly 
     if i == 0: display(ga, "Consecutive Pareto Fronts 0")
     elif i == 4: display(ga, "Consecutive Pareto Fronts 5")
     elif i == 9: display(ga,  "Consecutive Pareto Fronts 10")
     elif i == 24: display(ga,  "Consecutive Pareto Fronts 25")
     elif i == 49: display(ga,  "Consecutive Pareto Fronts 50")
+    elif i == 74: display(ga,  "Consecutive Pareto Fronts 75")
     elif i == 99: display(ga,  "Consecutive Pareto Fronts 100")
 
 display(ga=ga)
