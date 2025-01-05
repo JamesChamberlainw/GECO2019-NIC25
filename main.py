@@ -308,13 +308,12 @@ class GA:
     # Number of mutations (based on dyn * pop_size)
     DYNAMIC_MUTATION = 50
     DYNAMIC_CROSSOVER = 50
-    DYNAMIC_ENCODING = 50
 
     pop = []
     pop_size = 100
     num_nodes = 0
 
-    def __init__(self, nodes, problem_dict, pop_size = 250, dyn_mutation = 0.5, dyn_crossover = 0.5, dyn_encoding = 0.5):
+    def __init__(self, nodes, problem_dict, pop_size = 250, dyn_mutation = 0.5, dyn_crossover = 0.5):
         """
             Initializes the GA with the nodes and problem_dict
 
@@ -338,7 +337,6 @@ class GA:
         self.num_nodes = len(nodes)
 
         self.DYNAMIC_MUTATION = int(pop_size*dyn_mutation)
-        self.DYNAMIC_ENCODING = int(pop_size*dyn_encoding)
         self.DYNAMIC_CROSSOVER = int(pop_size*dyn_crossover)
 
         self.UTIL = Utils(nodes, problem_dict)
@@ -425,36 +423,6 @@ class GA:
             bags[random.randint(0, bag_length-1)] = 1
 
         return bags
-
-    def mutation_bags(self, individual, gene_id):
-        """
-            Mutates the bags of the individuals 
-
-            swaps the bags around to see if the solution improves 
-                DOES NOT CHANGE THE VISITED NODES
-        """
-
-        # individual = self.pop[individual_id]
-        
-        if len(individual) == 0: # too short to mutate 
-            raise ValueError("Individual is length 0")
-
-        gene = individual[gene_id]
-
-        # choose a random bit to flit (bag to pick or or not)
-        r = random.randint(0, len(gene[1])-1)
-
-        # flip the bit 1 -> 0 or 0 -> 1
-        gene[1][r] = 1 - gene[1][r]
-
-        # one bag must be selected else impossible to visit 
-        if sum(gene[1]) == 0:
-            gene[1][random.randint(0, len(gene[1])-1)] = 1
-
-        # replace the encoding
-        individual[gene_id] = gene
-
-        return individual
     
     def mutation_new_gene(self, individual):
         """
@@ -476,23 +444,6 @@ class GA:
         # new = self.fix_individual_validity(new)
 
         return new
-
-    def mutation_replace_gene(self, individual):
-        """
-            Standard single gene mutation and removal
-        """
-        # remove random gene 
-        r = random.randint(0, len(individual)-1)
-
-        # first attempt 
-        new = individual
-        new[r] = self.generate_gene()
-
-        # loop till a gene is found that can fit 
-        while self.UTIL.__has_duplicates__(new) == True:
-            new[r] = self.generate_gene()
-
-        return new 
 
     def fix_individual_validity(self, individual, fill_knapsack=True):
         """
@@ -588,14 +539,11 @@ class GA:
         """
 
         if len(individual) <= 1:
+            print(len(individual) <= 2)
             return individual
 
-        # drops a random location 
-        r = random.randint(0, len(individual)-1)
-
-        child = individual
-        child.pop(r)
-
+        child = individual.pop(random.randint(0, len(individual)-1))
+        print(len(child))
         return child
     
     def select_random(self, front, num_to_select):
@@ -673,8 +621,7 @@ class GA:
                             # if same bags selected 
                             if indv[i][1] is not c[i][1]:
                                 dupe = False
-                            # else:
-                            #     print(f"{indv[i][1]} vs {c[i][1]}")
+
                         else:
                             dupe = False
                         
@@ -690,6 +637,7 @@ class GA:
                                 
             return False
         
+        dupes_counter = 0
 
         # add parents to child pop (checks are mostly unnecessary but are still a layer of security)
         for parent in self.pop:
@@ -702,31 +650,47 @@ class GA:
                 child_pop.append(parent)
 
         # replace pop with child pop to remove dupes from causing damage 
+        print(f"Parent Population {len(child_pop)} / {len(self.pop)}")
         self.pop = child_pop
             
-        print(f"Parent Population {len(child_pop)} / {len(self.pop)}")
 
         # mutation_replace_gene
+        dupes_counter = 0
         for i in range(self.DYNAMIC_MUTATION):
             r = random.randint(0, len(self.pop)-1)
             child = self.pop[r]
 
             for j in range(num_genes_mutation):
-                child = self.mutation_replace_gene(child) 
+                # child = self.mutation_replace_gene(child) # TODO bugfix
+                child = self.mutation_new_gene(child)
+                child = self.fix_individual_validity(child)
             
+            # child_pop.append(child)
             if not check_dupe(child):
                 child_pop.append(child)
+            else:
+                dupes_counter += 1
+
+        print(f"Mutation Dupes Found {dupes_counter}")
+        dupes_counter = 0
 
 
-        # mutation drop (below weight limit)
-        for i in range(50):
-            r = random.randint(0, len(self.pop)-1)
-            child = self.pop[r]
+        # # mutation drop (below weight limit)
+        # for i in range(50):
+        #     r = random.randint(0, len(self.pop)-1)
+        #     child = self.pop[r]
 
-            child = self.mutation_drop(child) 
-            
-            if not check_dupe(child):
-                child_pop.append(child)
+        #     child = self.mutation_drop(child) 
+        #     print(len(child))
+        #     if not check_dupe(child):
+        #         child_pop.append(child)
+        #     else:
+        #         print(len(child))
+        #         print(len(self.pop[r]))
+        #         dupes_counter += 1
+
+        # print(f"Mutation Dropping Dupes Found {dupes_counter}")
+        # dupes_counter = 0
 
         # crossover
         for i in range(self.DYNAMIC_CROSSOVER):
@@ -746,18 +710,34 @@ class GA:
 
             if not check_dupe(child):
                 child_pop.append(child)
+            else:
+                dupes_counter += 1
 
-        # knapsack 
-        for i in range(self.DYNAMIC_ENCODING):
-            r = random.randint(0, len(self.pop)-1)
-            child = self.pop[r]
+        print(f"Crossover Dupes Found {dupes_counter}")
+        dupes_counter = 0
 
-            if len(child[1]) >= 1:
-                # mutate a single gene (if possible*)
-                child = self.mutation_bags(child, random.randint(0, len(child)-1))
-                # print(child)
-                if not check_dupe(child):
-                    child_pop.append(child)
+        # # knapsack # DEPRECATED 
+        # for i in range(self.DYNAMIC_ENCODING):
+        #     r = random.randint(0, len(self.pop)-1)
+        #     child = self.pop[r]
+
+        #     if len(child[1]) >= 1:
+        #         # mutate a single gene (if possible*)
+
+        #         # SELECT GENE
+        #         r = random.randint(0, len(child)-1)
+        #         gene_id = child[r][0]
+        #         print(gene_id)
+        #         child[r][0] = child[gene_id][1] = self.mutation_single_node_full(gene_id)
+        #         # child = self.mutation_bags(child, random.randint(0, len(child)-1))
+        #         # print(child)
+        #         if not check_dupe(child):
+        #             child_pop.append(child)
+        #         else:
+        #             dupes_counter += 1
+
+        # print(f"Knapsack Encoding Dupes Found {dupes_counter}")
+        # dupes_counter = 0
 
         
         # selection 
@@ -774,7 +754,6 @@ class GA:
         # Generation Report (END)
         print(f"""Unique Population {len(child_pop)} / {self.pop_size + 
                                                   self.DYNAMIC_CROSSOVER +
-                                                  self.DYNAMIC_ENCODING +
                                                   self.DYNAMIC_MUTATION} :: {len(new_pop)}""")
         print(f"Pareto Length {len(set(new_pop_ids))} / {len(new_pop_ids)}")
         # print(new_pop_ids)
@@ -821,8 +800,6 @@ def display(ga, title="Consecutive Pareto Fronts"):
 
     # Plot all the solutions
     solutions_np = np.array(solutions)
-    # plt.scatter(solutions_np[:, 0], solutions_np[:, 1], color='gray', label="All solutions")
-    # plt.show()
     print(f"Total Solutions in Plot {len(solutions_np)}")
 
     # colour map with distinct colours
@@ -854,7 +831,7 @@ def display(ga, title="Consecutive Pareto Fronts"):
 
 nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
 
-ga = GA(nodes, problem_dict, pop_size=200, dyn_crossover=2, dyn_encoding=2, dyn_mutation=2)
+ga = GA(nodes, problem_dict, pop_size=200, dyn_crossover=2, dyn_mutation=2)
 
 # MAIN LOOP
 for i in range(100):
