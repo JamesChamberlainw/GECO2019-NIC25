@@ -726,6 +726,7 @@ class GA:
             # append only if non-dupe (mostly for initial pop)
             if self.__GENERATION_INDEX__ <= 1:
                 child_pop.extend(self.pop)
+                break
 
             if not check_dupe(parent):
                 child_pop.append(parent)
