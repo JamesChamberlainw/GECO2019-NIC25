@@ -113,6 +113,8 @@ def pareto_front(solutions, indices):
 
 def get_consecutive_pareto_fronts(solutions):
 
+    print(len(solutions))
+
     fronts = []
     front_indices = []
 
@@ -302,11 +304,16 @@ class GA:
 
     UTIL = None
 
+    
+    DYNAMIC_MUTATION = 50
+    DYNAMIC_CROSSOVER = 50
+    DYNAMIC_ENCODING = 50
+
     pop = []
     pop_size = 100
     num_nodes = 0
 
-    def __init__(self, nodes, problem_dict, pop_size = 250):
+    def __init__(self, nodes, problem_dict, pop_size = 250, dyn_mutation = 0.5, dyn_crossover = 0.5, dyn_encoding = 0.5):
         """
             Initializes the GA with the nodes and problem_dict
 
@@ -326,6 +333,10 @@ class GA:
         """
         self.pop_size = pop_size
         self.num_nodes = len(nodes)
+
+        self.DYNAMIC_MUTATION = int(pop_size*dyn_mutation)
+        self.DYNAMIC_ENCODING = int(pop_size*dyn_encoding)
+        self.DYNAMIC_CROSSOVER = int(pop_size*dyn_crossover)
 
         self.UTIL = Utils(nodes, problem_dict)
 
@@ -417,7 +428,7 @@ class GA:
 
         return bags
 
-    def mutation_bags(self, individual_id, gene_id):
+    def mutation_bags(self, individual, gene_id):
         """
             Mutates the bags of the individuals 
 
@@ -425,7 +436,7 @@ class GA:
                 DOES NOT CHANGE THE VISITED NODES
         """
 
-        individual = self.pop[individual_id]
+        # individual = self.pop[individual_id]
         
         if len(individual) == 0: # too short to mutate 
             raise ValueError("Individual is length 0")
@@ -443,9 +454,9 @@ class GA:
             gene[1][random.randint(0, len(gene[1])-1)] = 1
 
         # replace the encoding
-        individual[3] = gene
+        individual[gene_id] = gene
 
-        print(f"Mutated: {gene}")
+        # print(f"Mutated: {gene}")
 
         return individual
     
@@ -599,10 +610,10 @@ class GA:
         # get fitness 
         x, y = self.gen_fitness(pop)
         xy = [[xi, yi] for xi, yi in zip(x, y)]
-        print(len(xy))
+        # print(len(xy))
         # Get consecutive Pareto fronts
         _, front_ids = get_consecutive_pareto_fronts(xy)
-        print(front_ids)
+        # print(front_ids)
 
         solutions = []
 
@@ -622,7 +633,7 @@ class GA:
                 # complete 
                 break
 
-        print(f"length {len(solutions)}")
+        return solutions
 
     def generation(self):
         """
@@ -635,12 +646,13 @@ class GA:
 
         # generate new population
         # TODO HERE 100 (intial) + 50 mutation radom for x number genes + 50 crossover + 50 bag mutation
-        child_pop.append(self.pop)
         
-        print()
+        child_pop.extend(self.pop)
+        
+        # print()
         # mutation_replace_gene
-        for i in range(50):
-            r = random.randint(0, len(self.pop))
+        for i in range(self.DYNAMIC_MUTATION):
+            r = random.randint(0, len(self.pop)-1)
             child = self.pop[r]
 
             for j in range(num_genes_mutation):
@@ -649,7 +661,7 @@ class GA:
             child_pop.append(child)
 
         # crossover
-        for i in range(50):
+        for i in range(self.DYNAMIC_CROSSOVER):
             r1 = random.randint(0, len(self.pop)-1)
             r2 = random.randint(0,  len(self.pop)-1)
 
@@ -667,17 +679,19 @@ class GA:
             child_pop.append(child)
 
         # knapsack 
-        for i in range(50):
-            # r = random.randint(0, len(self.pop))
-            # child = self.pop[r]
+        for i in range(self.DYNAMIC_ENCODING):
+            r = random.randint(0, len(self.pop)-1)
+            child = self.pop[r]
 
             if len(child[1]) > 1:
-                child = self.mutation_bags(r, random.randint(0, len(self.pop[r])-1))
+                # TODO: maybe increase number of mutated genes 
+                child = self.mutation_bags(child, random.randint(0, len(child)-1))
+                # print(child)
                 child_pop.append(child)
             
 
         # drop all non-unique 
-        child_pop = list(set(child_pop))
+        # child_pop = list(set(child_pop)) # ctd TODO: fix - do not want ANY repeated 
         
         # selection 
         new_pop = []
@@ -689,7 +703,7 @@ class GA:
             new_pop.append(child_pop[id])
 
         self.pop = new_pop
-        print(len(new_pop))
+        # print(len(new_pop))
 
 
     def gen_fitness(self, pop=None):
@@ -704,6 +718,8 @@ class GA:
             pop = self.pop
 
         for individual in pop:
+            # print(len(pop))
+            # print(len(individual))
             y.append(-self.UTIL.get_profit(individual))
             x.append(self.UTIL.fitness_calc_time(individual))
         
@@ -721,43 +737,44 @@ ga = GA(nodes, problem_dict, pop_size=250)
 
 # front = ga.selection(25)
 
-for i in range(10):
+for i in range(25):
+    print(f"GENERATION: {i}")
     ga.generation()
 
-    x, y = ga.gen_fitness()
-    x_label = "time"
-    y_label = "-profit"
+    # x, y = ga.gen_fitness()
+    # x_label = "time"
+    # y_label = "-profit"
 
-    solutions = [[xi, yi] for xi, yi in zip(x, y)]
+    # solutions = [[xi, yi] for xi, yi in zip(x, y)]
 
-    # Get consecutive Pareto fronts
-    pareto_fronts, _ = get_consecutive_pareto_fronts(solutions)
+    # # Get consecutive Pareto fronts
+    # pareto_fronts, _ = get_consecutive_pareto_fronts(solutions)
 
-    # Plot all the solutions
-    solutions_np = np.array(solutions)
-    plt.scatter(solutions_np[:, 0], solutions_np[:, 1], color='gray', label="All solutions")
+    # # Plot all the solutions
+    # solutions_np = np.array(solutions)
+    # plt.scatter(solutions_np[:, 0], solutions_np[:, 1], color='gray', label="All solutions")
 
-    # colormap with distinct colours
-    cmap = plt.get_cmap('tab10', len(pareto_fronts)) 
+    # # colormap with distinct colours
+    # cmap = plt.get_cmap('tab10', len(pareto_fronts)) 
 
-    # Plot each Pareto front with a line connecting the points 
-    for i, front in enumerate(pareto_fronts):
-        front_np = np.array(sorted(front, key=lambda x: x[0]))
-        color = cmap(i)  # Get the color for the i-th front
-        plt.scatter(front_np[:, 0], front_np[:, 1], label=f'Front {i+1}', color=color)
-        plt.plot(front_np[:, 0], front_np[:, 1], color=color, linestyle='-', marker='o')
+    # # Plot each Pareto front with a line connecting the points 
+    # for i, front in enumerate(pareto_fronts):
+    #     front_np = np.array(sorted(front, key=lambda x: x[0]))
+    #     color = cmap(i)  # Get the color for the i-th front
+    #     plt.scatter(front_np[:, 0], front_np[:, 1], label=f'Front {i+1}', color=color)
+    #     plt.plot(front_np[:, 0], front_np[:, 1], color=color, linestyle='-', marker='o')
 
-    # Labels and title
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.title('Consecutive Pareto Fronts')
+    # # Labels and title
+    # plt.xlabel(x_label)
+    # plt.ylabel(y_label)
+    # plt.title('Consecutive Pareto Fronts')
 
-    # Show legend
-    plt.legend()
+    # # Show legend
+    # plt.legend()
 
-    # Show plot
-    plt.grid(True)
-    plt.show()
+    # # Show plot
+    # plt.grid(True)
+    # plt.show()
 
 
 # ==========================================================================
