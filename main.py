@@ -654,22 +654,6 @@ class GA:
                 break
 
         return solutions
-    
-    # def is_dupe(population, check):
-    #     """
-    #         Removes duplicates in the generation 
-    #     """
-
-    #     print(len(population))
-
-    #     for individual in population:
-    #         if len(individual) == len(check):
-    #             # if length the same check 
-    #             for i in range(len(individual)):
-    #                 print("len")
-    #                 pass
-        
-    #     return False
                 
     def generation(self):
         """
