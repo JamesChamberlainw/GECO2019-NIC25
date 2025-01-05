@@ -301,9 +301,13 @@ class GA:
         for GECO2019
     """
 
+    # Generation Report Counters
+    __GENERATION_INDEX__ = 0 
+
+    # Util functions 
     UTIL = None
 
-    
+    # Number of mutations (based on dyn * pop_size)
     DYNAMIC_MUTATION = 50
     DYNAMIC_CROSSOVER = 50
     DYNAMIC_ENCODING = 50
@@ -330,6 +334,8 @@ class GA:
                         "RENTING_RATIO": float,
                     }
         """
+        self.__GENERATION_INDEX__ = 0 
+        
         self.pop_size = pop_size
         self.num_nodes = len(nodes)
 
@@ -378,7 +384,6 @@ class GA:
                 # TODO: remove [0] values (too lazy tonight todo it but easy fix)
             # else: retries -= 1
             if retries <= 0:
-                # print("Length: ", len(individual_id))
                 break
                     # [individual_id[-1], individual_bags[-1]]
             individual_validity = self.UTIL.is_valid_individual(individual)
@@ -392,7 +397,6 @@ class GA:
                 # invalid node due to duplicates
                 if duplicate_retry > 15: # duplicates can occur due to chance so try again
                     # too many duplicates found
-                    # print(f"Could not max out the individual capacity len: {len(individual)}")
                     break
                 duplicate_retry += 1
                 individual.pop()
@@ -413,7 +417,6 @@ class GA:
             return [1]
         
         if bag_length == 0:
-            # print("[0] No bags available for node " + str(individual_node_id) + "!")
             return [0]
         
         # TODO: CHECK THIS FOR MORE THAN 1 BAG
@@ -455,8 +458,6 @@ class GA:
         # replace the encoding
         individual[gene_id] = gene
 
-        # print(f"Mutated: {gene}")
-
         return individual
     
     def mutation_new_gene(self, individual):
@@ -497,7 +498,7 @@ class GA:
 
         return new 
 
-    def fix_individual_validity(self, individual):
+    def fix_individual_validity(self, individual, fill_knapsack=True):
         """
             Fixes an Individual (harsh - full checks)
         """
@@ -558,7 +559,7 @@ class GA:
             new = individual # TODO: deepcopy needed? 
 
             # if still under weight try to add more 
-            while self.UTIL.get_weight(new) < self.UTIL.get_max_weight():
+            while self.UTIL.get_weight(new) < self.UTIL.get_max_weight() and fill_knapsack:
                 # replace 
                 individual = new # TODO: deepcopy? 
 
@@ -633,16 +634,12 @@ class GA:
         # get fitness 
         x, y = self.gen_fitness(pop)
         xy = [[xi, yi] for xi, yi in zip(x, y)]
-        # print(len(xy))
         # Get consecutive Pareto fronts
         _, front_ids = get_consecutive_pareto_fronts(xy)
-        # print(front_ids)
 
         solutions = []
 
         for i in range(len(front_ids)):
-            # print(solutions) # debug code #
-            # print(f"{len(solutions)} / {pop_size}")  # debug code #
             if len(solutions) + len(front_ids[i]) <= pop_size:
                 # no checks needed as all are best solutions found 
                 for fr in front_ids[i]:
@@ -652,27 +649,27 @@ class GA:
                 _front_ids = self.select_random(front_ids[i], (pop_size - len(solutions)))
                 for fr in _front_ids:
                     solutions.append(fr)
-            else:
-                # complete 
+            else:   
+                # Complete 
                 break
 
         return solutions
     
-    def is_dupe(population, check):
-        """
-            Removes duplicates in the generation 
-        """
+    # def is_dupe(population, check):
+    #     """
+    #         Removes duplicates in the generation 
+    #     """
 
-        print(len(population))
+    #     print(len(population))
 
-        for individual in population:
-            if len(individual) == len(check):
-                # if length the same check 
-                for i in range(len(individual)):
-                    print("len")
-                    pass
+    #     for individual in population:
+    #         if len(individual) == len(check):
+    #             # if length the same check 
+    #             for i in range(len(individual)):
+    #                 print("len")
+    #                 pass
         
-        return False
+    #     return False
                 
     def generation(self):
         """
@@ -681,12 +678,19 @@ class GA:
             generate new population   
         """
 
+        print(f"Generation {self.__GENERATION_INDEX__}")
+        self.__GENERATION_INDEX__ += 1 
+
         num_genes_mutation = 1  # genes to attempt to mutate 
 
         child_pop = []
 
-        def check_dupe(c):
-            for indv in child_pop:
+
+        def check_dupe(c, popul=child_pop):
+            """
+                Check for duplicates within child_pop 
+            """
+            for indv in popul:
                 dupe = True
                 # same length 
                 if len(indv) == len(c):
@@ -694,20 +698,40 @@ class GA:
                     for i in range(len(indv)-1):
                         # if same position 
                         if indv[i][0] == c[i][0]:
-
+                            # if same bags selected 
                             if indv[i][1] is not c[i][1]:
                                 dupe = False
+                            # else:
+                            #     print(f"{indv[i][1]} vs {c[i][1]}")
                         else:
                             dupe = False
+                        
+                        # break out 
+                        if dupe == False:
+                            break
                 else:
-                    continue
-                return dupe
+                    dupe = False
+
+                # Stop searching individual dupe found 
+                if dupe == True:
+                    return dupe
                                 
             return False
 
         # generate new population        
-        child_pop.extend(self.pop)
-        
+        # child_pop.extend(self.pop)
+
+        for parent in self.pop:
+            # append only if non-dupe (mostly for initial pop)
+            if not check_dupe(parent):
+                child_pop.append(parent)
+
+
+        # replace pop with child pop to remove dupes from causing damage 
+        self.pop = child_pop
+            
+        print(f"Parent Population {len(child_pop)} / {len(self.pop)}")
+
         # mutation_replace_gene
         for i in range(self.DYNAMIC_MUTATION):
             r = random.randint(0, len(self.pop)-1)
@@ -719,7 +743,19 @@ class GA:
             if not check_dupe(child):
                 child_pop.append(child)
 
-        # mutation drop 
+
+        # mutation drop (below weight limit)
+        for i in range(50):
+            r = random.randint(0, len(self.pop)-1)
+            child = self.pop[r]
+
+            child = self.mutation_drop(child) 
+            
+            if not check_dupe(child):
+                child_pop.append(child)
+
+
+        # mutation additive (beyond weight limit)
         # for i in range(250):
         #     r = random.randint(0, len(self.pop)-1)
         #     child = self.pop[r]
@@ -728,6 +764,7 @@ class GA:
             
         #     if not check_dupe(child):
         #         child_pop.append(child)
+
 
         # crossover
         for i in range(self.DYNAMIC_CROSSOVER):
@@ -759,12 +796,15 @@ class GA:
                 # print(child)
                 if not check_dupe(child):
                     child_pop.append(child)
-            
+                    
 
         # drop all non-unique 
         # print(child_pop)
         # unique = self.remove_dupes([child_pop])
         # child_pop = list(set(child_pop)) # ctd TODO: fix - do not want ANY repeated 
+
+        # RE-EVALUATE DUPLICATES 
+
         
         # selection 
         new_pop = []
@@ -776,6 +816,17 @@ class GA:
             new_pop.append(child_pop[id])
 
         self.pop = new_pop
+
+        # Generation Report (END)
+        print(f"""Unique Population {len(child_pop)} / {self.pop_size + 
+                                                  self.DYNAMIC_CROSSOVER +
+                                                  self.DYNAMIC_ENCODING +
+                                                  self.DYNAMIC_MUTATION} :: {len(new_pop)}""")
+        print(f"Pareto Length {len(set(new_pop_ids))} / {len(new_pop_ids)}")
+        # print(new_pop_ids)
+        # print(f"max {min(new_pop_ids)} / {max(new_pop_ids)}") # debug: 
+        print(f"======================")
+
         # print(len(new_pop))
 
 
@@ -791,8 +842,6 @@ class GA:
             pop = self.pop
 
         for individual in pop:
-            # print(len(pop))
-            # print(len(individual))
             y.append(-self.UTIL.get_profit(individual))
             x.append(self.UTIL.fitness_calc_time(individual))
         
@@ -813,8 +862,7 @@ ga = GA(nodes, problem_dict, pop_size=200, dyn_crossover=2, dyn_encoding=2, dyn_
 #   VIS
 # ==========================================================================
 
-for i in range(250):
-    print(f"GENERATION: {i}")
+for i in range(5):
     ga.generation()
 
 x, y = ga.gen_fitness()
@@ -823,68 +871,23 @@ y_label = "-profit"
 
 solutions = [[xi, yi] for xi, yi in zip(x, y)]
 
-print(f"solution len: {len(solutions)}")
-
 # Get consecutive Pareto fronts
 pareto_fronts, _ = get_consecutive_pareto_fronts(solutions)
 
 # Plot all the solutions
 solutions_np = np.array(solutions)
-plt.scatter(solutions_np[:, 0], solutions_np[:, 1], color='gray', label="All solutions")
+# plt.scatter(solutions_np[:, 0], solutions_np[:, 1], color='gray', label="All solutions")
+# plt.show()
+print(f"Total Solutions in Plot {len(solutions_np)}")
 
-# colormap with distinct colours
+# colour map with distinct colours
 cmap = plt.get_cmap('tab10', len(pareto_fronts)) 
 
 # Plot each Pareto front with a line connecting the points 
 for i, front in enumerate(pareto_fronts):
     front_np = np.array(sorted(front, key=lambda x: x[0]))
     color = cmap(i)  # Get the color for the i-th front
-    plt.scatter(front_np[:, 0], front_np[:, 1], label=f'Front {i+1}', color=color)
-    plt.plot(front_np[:, 0], front_np[:, 1], color=color, linestyle='-', marker='o')
-
-# Labels and title
-plt.xlabel(x_label)
-plt.ylabel(y_label)
-plt.title('Consecutive Pareto Fronts')
-
-# Show legend
-plt.legend()
-
-# Show plot
-plt.grid(True)
-plt.show()
-
-# ==========================================================================
-#   VIS
-# ==========================================================================
-
-for i in range(250):
-    print(f"GENERATION: {i}")
-    ga.generation()
-
-x, y = ga.gen_fitness()
-x_label = "time"
-y_label = "-profit"
-
-solutions = [[xi, yi] for xi, yi in zip(x, y)]
-
-print(f"solution len: {len(solutions)}")
-
-# Get consecutive Pareto fronts
-pareto_fronts, _ = get_consecutive_pareto_fronts(solutions)
-
-# Plot all the solutions
-solutions_np = np.array(solutions)
-plt.scatter(solutions_np[:, 0], solutions_np[:, 1], color='gray', label="All solutions")
-
-# colormap with distinct colours
-cmap = plt.get_cmap('tab10', len(pareto_fronts)) 
-
-# Plot each Pareto front with a line connecting the points 
-for i, front in enumerate(pareto_fronts):
-    front_np = np.array(sorted(front, key=lambda x: x[0]))
-    color = cmap(i)  # Get the color for the i-th front
-    plt.scatter(front_np[:, 0], front_np[:, 1], label=f'Front {i+1}', color=color)
+    plt.scatter(front_np[:, 0], front_np[:, 1], label=f'Front {i+1} / len {len(front_np)}', color=color)
     plt.plot(front_np[:, 0], front_np[:, 1], color=color, linestyle='-', marker='o')
 
 # Labels and title
