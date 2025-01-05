@@ -113,8 +113,6 @@ def pareto_front(solutions, indices):
 
 def get_consecutive_pareto_fronts(solutions):
 
-    print(len(solutions))
-
     fronts = []
     front_indices = []
 
@@ -585,6 +583,30 @@ class GA:
         child = self.fix_individual_validity(child)
 
         return child
+
+    def mutation_drop(self, individual):
+        """
+            drop random elements to go below weight threshold 
+        """
+
+        if len(individual) <= 1:
+            return individual
+
+        # drops a random location 
+        r = random.randint(0, len(individual)-1)
+
+        child = individual
+        child.pop(r)
+
+        return child
+    
+    def mutation_grow(self, individual):
+        """
+            pick up random elements to go above weight threshold 
+        """
+
+        # drops a random location 
+        # TODO: work on this one as there is a maximum 
     
     def select_random(self, front, num_to_select):
         """
@@ -634,22 +656,57 @@ class GA:
                 break
 
         return solutions
+    
+    def is_dupe(population, check):
+        """
+            Removes duplicates in the generation 
+        """
 
+        print(len(population))
+
+        for individual in population:
+            if len(individual) == len(check):
+                # if length the same check 
+                for i in range(len(individual)):
+                    print("len")
+                    pass
+        
+        return False
+                
     def generation(self):
         """
-            Perform a single Generation 
+            Perform a single Generation
+
+            generate new population   
         """
 
-        num_genes_mutation = 5  # genes to attempt to mutate 
+        num_genes_mutation = 1  # genes to attempt to mutate 
 
         child_pop = []
 
-        # generate new population
-        # TODO HERE 100 (intial) + 50 mutation radom for x number genes + 50 crossover + 50 bag mutation
-        
+        def check_dupe(c):
+            for indv in child_pop:
+                dupe = True
+                # same length 
+                if len(indv) == len(c):
+
+                    for i in range(len(indv)-1):
+                        # if same position 
+                        if indv[i][0] == c[i][0]:
+
+                            if indv[i][1] is not c[i][1]:
+                                dupe = False
+                        else:
+                            dupe = False
+                else:
+                    continue
+                return dupe
+                                
+            return False
+
+        # generate new population        
         child_pop.extend(self.pop)
         
-        # print()
         # mutation_replace_gene
         for i in range(self.DYNAMIC_MUTATION):
             r = random.randint(0, len(self.pop)-1)
@@ -657,8 +714,19 @@ class GA:
 
             for j in range(num_genes_mutation):
                 child = self.mutation_replace_gene(child) 
+            
+            if not check_dupe(child):
+                child_pop.append(child)
 
-            child_pop.append(child)
+        # mutation drop 
+        # for i in range(250):
+        #     r = random.randint(0, len(self.pop)-1)
+        #     child = self.pop[r]
+
+        #     child = self.mutation_drop(child) 
+            
+        #     if not check_dupe(child):
+        #         child_pop.append(child)
 
         # crossover
         for i in range(self.DYNAMIC_CROSSOVER):
@@ -676,21 +744,25 @@ class GA:
             # crossover
             child = self.crossover(p1, p2)
 
-            child_pop.append(child)
+            if not check_dupe(child):
+                child_pop.append(child)
 
         # knapsack 
         for i in range(self.DYNAMIC_ENCODING):
             r = random.randint(0, len(self.pop)-1)
             child = self.pop[r]
 
-            if len(child[1]) > 1:
+            if len(child[1]) >= 1:
                 # TODO: maybe increase number of mutated genes 
                 child = self.mutation_bags(child, random.randint(0, len(child)-1))
                 # print(child)
-                child_pop.append(child)
+                if not check_dupe(child):
+                    child_pop.append(child)
             
 
         # drop all non-unique 
+        # print(child_pop)
+        # unique = self.remove_dupes([child_pop])
         # child_pop = list(set(child_pop)) # ctd TODO: fix - do not want ANY repeated 
         
         # selection 
@@ -729,23 +801,26 @@ class GA:
 # ==========================================================================
 #   MAIN
 # ==========================================================================
+# nodes, problem_dict = load_data(DIR + "fnl4461-n22300.txt")
 
 
 nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
 
-ga = GA(nodes, problem_dict, pop_size=250)
+ga = GA(nodes, problem_dict, pop_size=200, dyn_crossover=2, dyn_encoding=2, dyn_mutation=2)
 
 # front = ga.selection(25)
 
-for i in range(25):
-    print(f"GENERATION: {i}")
-    ga.generation()
+# for i in range(250):
+#     print(f"GENERATION: {i}")
+#     ga.generation()
 
     # x, y = ga.gen_fitness()
     # x_label = "time"
     # y_label = "-profit"
 
     # solutions = [[xi, yi] for xi, yi in zip(x, y)]
+
+    # # # #  print(f"solution len: {len(solutions)}")
 
     # # Get consecutive Pareto fronts
     # pareto_fronts, _ = get_consecutive_pareto_fronts(solutions)
