@@ -3,6 +3,9 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 
+# import threading
+# import copy
+
 from collections import defaultdict
 
 # from pyhv import Hypervolume
@@ -419,8 +422,6 @@ class GA:
         if bag_length == 0:
             return [0]
         
-        # TODO: CHECK THIS FOR MORE THAN 1 BAG
-
         # random chance 0 or 1 for each bag (50% chance each)
         bags = [random.choice([0, 1]) for _ in range(bag_length)]
 
@@ -556,12 +557,12 @@ class GA:
             return individual
         else:
             # repopulate with genes to add more to the bag
-            new = individual # TODO: deepcopy needed? 
+            new = individual 
 
             # if still under weight try to add more 
             while self.UTIL.get_weight(new) < self.UTIL.get_max_weight() and fill_knapsack:
                 # replace 
-                individual = new # TODO: deepcopy? 
+                individual = new 
 
                 # find new gene 
                 new = self.mutation_new_gene(new)
@@ -601,14 +602,6 @@ class GA:
         child.pop(r)
 
         return child
-    
-    def mutation_grow(self, individual):
-        """
-            pick up random elements to go above weight threshold 
-        """
-
-        # drops a random location 
-        # TODO: work on this one as there is a maximum 
     
     def select_random(self, front, num_to_select):
         """
@@ -701,9 +694,7 @@ class GA:
                     return dupe
                                 
             return False
-
-        # generate new population        
-        # child_pop.extend(self.pop)
+        
 
         # add parents to child pop (checks are mostly unnecessary but are still a layer of security)
         for parent in self.pop:
@@ -742,18 +733,6 @@ class GA:
             if not check_dupe(child):
                 child_pop.append(child)
 
-
-        # mutation additive (beyond weight limit)
-        # for i in range(250):
-        #     r = random.randint(0, len(self.pop)-1)
-        #     child = self.pop[r]
-
-        #     child = self.mutation_drop(child) 
-            
-        #     if not check_dupe(child):
-        #         child_pop.append(child)
-
-
         # crossover
         for i in range(self.DYNAMIC_CROSSOVER):
             r1 = random.randint(0, len(self.pop)-1)
@@ -779,19 +758,11 @@ class GA:
             child = self.pop[r]
 
             if len(child[1]) >= 1:
-                # TODO: maybe increase number of mutated genes 
+                # mutate a single gene (if possible*)
                 child = self.mutation_bags(child, random.randint(0, len(child)-1))
                 # print(child)
                 if not check_dupe(child):
                     child_pop.append(child)
-                    
-
-        # drop all non-unique 
-        # print(child_pop)
-        # unique = self.remove_dupes([child_pop])
-        # child_pop = list(set(child_pop)) # ctd TODO: fix - do not want ANY repeated 
-
-        # RE-EVALUATE DUPLICATES 
 
         
         # selection 
@@ -835,57 +806,80 @@ class GA:
         
         return x, y
 
+# ==========================================================================
+#   VIS
+# ==========================================================================
+
+def display(ga, title):
+    """
+        Visualisation Function 
+    """
+
+    x, y = ga.gen_fitness()
+    x_label = "time"
+    y_label = "-profit"
+
+    solutions = [[xi, yi] for xi, yi in zip(x, y)]
+
+    # Get consecutive Pareto fronts
+    pareto_fronts, _ = get_consecutive_pareto_fronts(solutions)
+
+    # Plot all the solutions
+    solutions_np = np.array(solutions)
+    # plt.scatter(solutions_np[:, 0], solutions_np[:, 1], color='gray', label="All solutions")
+    # plt.show()
+    print(f"Total Solutions in Plot {len(solutions_np)}")
+
+    # colour map with distinct colours
+    cmap = plt.get_cmap('tab10', len(pareto_fronts)) 
+
+    # Plot each Pareto front with a line connecting the points 
+    for i, front in enumerate(pareto_fronts):
+        front_np = np.array(sorted(front, key=lambda x: x[0]))
+        color = cmap(i)  # Get the color for the i-th front
+        plt.scatter(front_np[:, 0], front_np[:, 1], label=f'Front {i+1} / len {len(front_np)}', color=color)
+        plt.plot(front_np[:, 0], front_np[:, 1], color=color, linestyle='-', marker='o')
+
+    # Labels and title
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(title)
+
+    # Show legend
+    plt.legend()
+
+    # Show plot
+    plt.grid(True)
+    plt.show()
+
+# def plot_multi_thread(ga, title="Consecutive Pareto Fronts"):
+#     """
+#         Multi-Threading for plotting # buggy 
+#     """
+#     ga_deep = copy.deepcopy(ga)
+#     plot_thread = threading.Thread(target=display, args=(ga_deep, title))
+#     plot_thread.start()
+
 
 # ==========================================================================
 #   MAIN
 # ==========================================================================
 # nodes, problem_dict = load_data(DIR + "fnl4461-n22300.txt")
 
-
 nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
 
 ga = GA(nodes, problem_dict, pop_size=200, dyn_crossover=2, dyn_encoding=2, dyn_mutation=2)
 
-# ==========================================================================
-#   VIS
-# ==========================================================================
-
-for i in range(5):
+# MAIN LOOP
+for i in range(100):
     ga.generation()
 
-x, y = ga.gen_fitness()
-x_label = "time"
-y_label = "-profit"
+    # copy and then run on aother thread indipendnatly 
+    if i == 0: display(ga, "Consecutive Pareto Fronts 0")
+    elif i == 4: display(ga, "Consecutive Pareto Fronts 5")
+    elif i == 9: display(ga,  "Consecutive Pareto Fronts 10")
+    elif i == 24: display(ga,  "Consecutive Pareto Fronts 25")
+    elif i == 49: display(ga,  "Consecutive Pareto Fronts 50")
+    elif i == 99: display(ga,  "Consecutive Pareto Fronts 100")
 
-solutions = [[xi, yi] for xi, yi in zip(x, y)]
-
-# Get consecutive Pareto fronts
-pareto_fronts, _ = get_consecutive_pareto_fronts(solutions)
-
-# Plot all the solutions
-solutions_np = np.array(solutions)
-# plt.scatter(solutions_np[:, 0], solutions_np[:, 1], color='gray', label="All solutions")
-# plt.show()
-print(f"Total Solutions in Plot {len(solutions_np)}")
-
-# colour map with distinct colours
-cmap = plt.get_cmap('tab10', len(pareto_fronts)) 
-
-# Plot each Pareto front with a line connecting the points 
-for i, front in enumerate(pareto_fronts):
-    front_np = np.array(sorted(front, key=lambda x: x[0]))
-    color = cmap(i)  # Get the color for the i-th front
-    plt.scatter(front_np[:, 0], front_np[:, 1], label=f'Front {i+1} / len {len(front_np)}', color=color)
-    plt.plot(front_np[:, 0], front_np[:, 1], color=color, linestyle='-', marker='o')
-
-# Labels and title
-plt.xlabel(x_label)
-plt.ylabel(y_label)
-plt.title('Consecutive Pareto Fronts')
-
-# Show legend
-plt.legend()
-
-# Show plot
-plt.grid(True)
-plt.show()
+display(ga=ga)
