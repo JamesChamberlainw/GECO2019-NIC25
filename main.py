@@ -721,11 +721,14 @@ class GA:
         # generate new population        
         # child_pop.extend(self.pop)
 
+        # add parents to child pop (checks are mostly unnecessary but are still a layer of security)
         for parent in self.pop:
             # append only if non-dupe (mostly for initial pop)
+            if self.__GENERATION_INDEX__ <= 1:
+                child_pop.extend(self.pop)
+
             if not check_dupe(parent):
                 child_pop.append(parent)
-
 
         # replace pop with child pop to remove dupes from causing damage 
         self.pop = child_pop
