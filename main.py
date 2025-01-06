@@ -911,6 +911,57 @@ def display(ga, title="Consecutive Pareto Fronts"):
     plt.grid(True)
     plt.show()
 
+def Backup_copy(ga, title="genG9task", folder_name="report/backup", gen_num = 0, copy_location="results_backup", n = 100):
+    """
+        Saves a copy of both the GA and Vis in unique folders (for first run*) 
+    """
+
+    report(ga=ga, task_name=title, folder_name=folder_name, n=n)
+
+    x, y = ga.gen_fitness()
+    x_label = "time"
+    y_label = "-profit"
+
+    solutions = [[xi, yi] for xi, yi in zip(x, y)]
+
+    # Get consecutive Pareto fronts
+    pareto_fronts, _ = get_consecutive_pareto_fronts(solutions)
+
+    # Plot all the solutions
+    solutions_np = np.array(solutions)
+    print(f"Total Solutions in Plot {len(solutions_np)}")
+
+    # colour map with distinct colours
+    cmap = plt.get_cmap('tab10', len(pareto_fronts)) 
+
+    # Plot each Pareto front with a line connecting the points 
+    for i, front in enumerate(pareto_fronts):
+        front_np = np.array(sorted(front, key=lambda x: x[0]))
+        color = cmap(i)  # Get the color for the i-th front
+        plt.scatter(front_np[:, 0], front_np[:, 1], label=f'Front {i+1} / len {len(front_np)}', color=color)
+        plt.plot(front_np[:, 0], front_np[:, 1], color=color, linestyle='-', marker='o')
+
+    # Labels and title
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(title)
+
+    # Show legend
+    plt.legend()
+
+    # Show plot
+    plt.grid(True)
+    plt.savefig(
+        f"{folder_name}/{title}.png",
+        dpi=300,
+        bbox_inches="tight",
+        transparent=True,
+        pad_inches=0.1,
+    )
+
+    plt.clf()
+
+
 def report(ga, folder_name="results/_bin", task_name="bin", n=100):
     """
         Generates Report .x .f files
@@ -995,7 +1046,7 @@ def report(ga, folder_name="results/_bin", task_name="bin", n=100):
 #   MAIN
 # ==========================================================================
 
-def run(problem="a280-n1395", num_gen=1000, save_point=25, n=100):
+def run(problem="a280-n1395", num_gen=1000, save_point=5, backup_point=50, n=100):
     """
         Runs the problem
 
@@ -1013,7 +1064,10 @@ def run(problem="a280-n1395", num_gen=1000, save_point=25, n=100):
         if i % save_point == 0:
             # save copy of latest report 
             report(ga, "results", f"G9-{problem}", n)
-            display(ga)
+            # display(ga) # only show if you don't want to save
+
+        if i % backup_point == 0:
+            Backup_copy(ga=ga, title=f"{ga.__GENERATION_INDEX__}-G9-{problem}", folder_name="report/backup", n=n)
 
 
     # final generation 
@@ -1022,4 +1076,6 @@ def run(problem="a280-n1395", num_gen=1000, save_point=25, n=100):
 
     report(ga, "results", f"G9-{problem}")
 
-run(num_gen=100)
+run(problem="a280-n279", num_gen=10000, n=100)
+run(problem="a280-n1395", num_gen=10000, n=100)
+run(problem="a280-n2790", num_gen=10000, n=100)
