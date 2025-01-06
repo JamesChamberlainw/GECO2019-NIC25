@@ -356,7 +356,7 @@ class GA:
         for i in range(pop_size):
             individual = self.generate_individual()
             self.pop.append(individual)
-            # print(i)
+            print(i)
         print("============================")
 
     def get_solutions(self):
@@ -1025,7 +1025,7 @@ def run(problem="a280-n1395", num_gen=1000, save_point=5, backup_point=25, n=100
             # display(ga) # only show if you don't want to save
 
         if i % backup_point == 0:
-            Backup_copy(ga=ga, title=f"{ga.__GENERATION_INDEX__}-G9-{problem}", folder_name="report/backup", n=n)
+            Backup_copy(ga=ga, title=f"_{ga.__GENERATION_INDEX__}-G9-{problem}", folder_name="report/backup", n=n)
 
 
     # final generation 
@@ -1035,5 +1035,11 @@ def run(problem="a280-n1395", num_gen=1000, save_point=5, backup_point=25, n=100
     report(ga, "results", f"G9-{problem}")
 
 # run(problem="a280-okn279", num_gen=10000, n=100) # TODO: BROKEN 
-run(problem="a280-n1395", num_gen=10000, n=100) # working 
+# run(problem="a280-n1395", num_gen=10000, n=100) # working 
 # run(problem="a280-n2790", num_gen=10000, n=100) # working 
+
+
+run(problem="fnl4461-n22300", num_gen=10000, n=20) # working 
+# run(problem="pla33810-n169045", num_gen=10000, n=20) # working 
+
+# fnl4461-n22300
