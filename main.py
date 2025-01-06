@@ -942,41 +942,9 @@ def report(ga, folder_name="results/_bin", task_name="bin"):
     with open(file_path, "w") as file:
         file.write(f"{time_profit}")
 
-
-
-
-# ==========================================================================
-#   DATA EXTRACTION 
-# ==========================================================================
-
 # ==========================================================================
 #   MAIN
 # ==========================================================================
-
-# DIR = "resources/" 
-# nodes, problem_dict = load_data(DIR + "fnl4461-n4460.txt")
-
-# nodes, problem_dict = load_data(DIR + "a280-n2790.txt")
-# nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
-# nodes, problem_dict = load_data(DIR + "a280-n279.txt")
-
-# ga = GA(nodes, problem_dict, pop_size=100, dyn_crossover=2, dyn_mutation=2)
-
-# # MAIN LOOP
-# for i in range(1):
-#     ga.generation()
-
-    # if i == 0: display(ga, "Consecutive Pareto Fronts 0")
-    # elif i == 249: display(ga,  "Consecutive Pareto Fronts 250")
-    # elif i == 499: display(ga,  "Consecutive Pareto Fronts 500")
-    # elif i == 749: display(ga,  "Consecutive Pareto Fronts 750")
-    # elif i == 999: display(ga,  "Consecutive Pareto Fronts 1000")
-
-# GROUP_NAME = "G9"
-
-# report(ga)
-
-# display(ga=ga)
 
 def run(problem="a280-n1395", num_gen=1000, save_point=25):
     """
