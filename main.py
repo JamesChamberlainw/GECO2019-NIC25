@@ -12,7 +12,7 @@ import os
 # import sys
 # sys.setrecursionlimit(1000) # might need to increase (maybe? debug code left if needed)
 
-DIR = "resources/" # + "test-example-n4.txt" # loading data
+# DIR = "resources/" # + "test-example-n4.txt" # loading data
 
 def load_data(file_name):
     """
@@ -192,7 +192,7 @@ class Utils:
         """
             returns max weight / capacity 
         """
-        return problem_dict["CAPACITY"]
+        return self.problem_dict["CAPACITY"]
 
     def get_distance(self, node1, node2):
         """
@@ -301,7 +301,7 @@ class Utils:
         """
             Returns the max number of locations a individual can visit 
         """
-        return problem_dict["DIMENSION"]-1 # 0 is our fist number so 280 -> 279 for index / len()    
+        return self.problem_dict["DIMENSION"]-1 # 0 is our fist number so 280 -> 279 for index / len()    
 
 class GA:
     """
@@ -929,7 +929,8 @@ def report(ga, folder_name="results/_bin", task_name="bin"):
 
     # generate time / profit 
     x, y = ga.gen_fitness()
-    y = -y # reverse negative 
+    for y_i in range(len(y)):
+        y[y_i] = -y[y_i]
 
     time_profit = ""
     for i in range(len(x)):
@@ -951,17 +952,19 @@ def report(ga, folder_name="results/_bin", task_name="bin"):
 # ==========================================================================
 #   MAIN
 # ==========================================================================
+
+# DIR = "resources/" 
 # nodes, problem_dict = load_data(DIR + "fnl4461-n4460.txt")
 
 # nodes, problem_dict = load_data(DIR + "a280-n2790.txt")
-nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
+# nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
 # nodes, problem_dict = load_data(DIR + "a280-n279.txt")
 
-ga = GA(nodes, problem_dict, pop_size=100, dyn_crossover=2, dyn_mutation=2)
+# ga = GA(nodes, problem_dict, pop_size=100, dyn_crossover=2, dyn_mutation=2)
 
-# MAIN LOOP
-for i in range(1):
-    ga.generation()
+# # MAIN LOOP
+# for i in range(1):
+#     ga.generation()
 
     # if i == 0: display(ga, "Consecutive Pareto Fronts 0")
     # elif i == 249: display(ga,  "Consecutive Pareto Fronts 250")
@@ -969,9 +972,29 @@ for i in range(1):
     # elif i == 749: display(ga,  "Consecutive Pareto Fronts 750")
     # elif i == 999: display(ga,  "Consecutive Pareto Fronts 1000")
 
-GROUP_NAME = "G9"
+# GROUP_NAME = "G9"
 
-report(ga)
+# report(ga)
 
-display(ga=ga)
+# display(ga=ga)
 
+def run(problem="a280-n1395", num_gen=1000, save_point=25):
+    """
+        Runs the problem
+    """
+
+    nodes, problem_dict = load_data(f"resources/{problem}.txt")
+
+    ga = GA(nodes, problem_dict, pop_size=100, dyn_crossover=2, dyn_mutation=2)
+
+    # MAIN LOOP
+    for i in range(num_gen):
+        ga.generation()
+
+        if i % 25 == 0:
+            # save copy of latest report 
+            report(ga, "results", f"G9-{problem}")
+
+    report(ga, "results", f"G9-{problem}")
+
+run(num_gen=100)
