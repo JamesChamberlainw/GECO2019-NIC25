@@ -274,15 +274,6 @@ class Utils:
 
         # add start and end point 
         individual = [self.nodes[0]] + individual[:] + [self.nodes[0]]
-
-        print("\n\n")
-        print(individual)
-
-        if len(self.get_instances_of_repeated_gene(individual)) > 1:
-            print("\n\n\n")
-            print(individual)
-            print(self.get_instances_of_repeated_gene(individual))
-            raise("DUPES + 2")
         
         history = []
         time = 0
@@ -354,9 +345,12 @@ class GA:
         self.UTIL = Utils(nodes, problem_dict)
 
         # generate initial population
+        print("\n Generating Initial Population")
         for i in range(pop_size):
             individual = self.generate_individual()
             self.pop.append(individual)
+            # print(i)
+        print("============================")
 
     def generate_gene(self):
         """
@@ -411,6 +405,11 @@ class GA:
                 duplicate_retry += 1
                 individual.pop()
 
+            # if full individual mutation must take over 
+            if len(individual) >= self.UTIL.get_max_locations()-1:
+                incomplete = False
+
+
         return self.fix_individual_validity(individual) # final checks (should be clear but this is the init pop)
 
     def mutation_single_node_full(self, individual_node_id):
@@ -427,6 +426,7 @@ class GA:
             return [1]
         
         if bag_length == 0:
+            raise("NO")
             return [0]
         
         # random chance 0 or 1 for each bag (50% chance each)
@@ -444,15 +444,31 @@ class GA:
 
             Note: checks need to be done after to check if this is a valid individual
         """
+        max_mutation_flag = True # if false maxed out
 
         # split location 
         r = random.randint(0, len(individual))
+        gene = []
+
+        if len(individual) >= self.UTIL.get_max_locations()-1:
+            # CAN ONLY REGENERATE A GENE NOT REPLACE IT SO
+            # SAVE GENE ID , MUTATE BAGS BY MUTATION , MOVE ON
+            max_mutation_flag = False 
+            r1 = random.randint(0, len(individual)-1)
+            gene = individual[r1]
+            gene[1] = [1 - bit if random.random() < 0.5 else bit for bit in gene[1]]
+            individual.pop(r1)
+        else:
+            gene = self.generate_gene()
+        
+
+
         
         # first attempt 
-        new = individual[:r] + [self.generate_gene()] + individual[r:]
+        new = individual[:r] + [gene] + individual[r:]
 
         # loop till a gene is found that can fit 
-        while self.UTIL.__has_duplicates__(new) == True:
+        while self.UTIL.__has_duplicates__(new) == True and max_mutation_flag:
             new = individual[:r] + [self.generate_gene()] + individual[r:]      
 
         # new = self.fix_individual_validity(new)
@@ -524,6 +540,10 @@ class GA:
                 # replace 
                 individual = new 
 
+                # not role to mutate here only fix so this is acceptable so far if max locations
+                if len(individual) >= self.UTIL.get_max_locations()-1:
+                    break
+
                 # find new gene 
                 new = self.mutation_new_gene(new)
 
@@ -557,7 +577,6 @@ class GA:
             return individual
 
         child = individual.pop(random.randint(0, len(individual)-1))
-        print(len(child))
         return child
     
     def select_random(self, front, num_to_select):
@@ -730,11 +749,8 @@ class GA:
                                                   self.DYNAMIC_CROSSOVER +
                                                   self.DYNAMIC_MUTATION} :: {len(new_pop)}""")
         print(f"Pareto Length {len(set(new_pop_ids))} / {len(new_pop_ids)}")
-        # print(new_pop_ids)
-        # print(f"max {min(new_pop_ids)} / {max(new_pop_ids)}") # debug: 
         print(f"======================")
 
-        # print(len(new_pop))
 
     def gen_fitness(self, pop=None):
         """
