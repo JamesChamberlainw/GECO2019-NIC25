@@ -288,6 +288,7 @@ class Utils:
 
         for i in range(1, len(individual)):
             distance = self.get_distance(self.nodes[individual[i-1][0]-1], self.nodes[individual[i][0]-1])
+            velocity = self.__calc_velocity__(weight)
             time += distance / velocity
             weight += self.get_weight([individual[i]])
         return time
@@ -867,15 +868,13 @@ nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
 ga = GA(nodes, problem_dict, pop_size=100, dyn_crossover=2, dyn_mutation=2)
 
 # MAIN LOOP
-for i in range(10):
+for i in range(1000):
     ga.generation()
 
-    # if i == 0: display(ga, "Consecutive Pareto Fronts 0")
-    # elif i == 4: display(ga, "Consecutive Pareto Fronts 5")
-    # elif i == 9: display(ga,  "Consecutive Pareto Fronts 10")
-    # elif i == 24: display(ga,  "Consecutive Pareto Fronts 25")
-    # elif i == 49: display(ga,  "Consecutive Pareto Fronts 50")
-    # elif i == 74: display(ga,  "Consecutive Pareto Fronts 75")
-    # elif i == 99: display(ga,  "Consecutive Pareto Fronts 100")
+    if i == 0: display(ga, "Consecutive Pareto Fronts 0")
+    elif i == 249: display(ga,  "Consecutive Pareto Fronts 250")
+    elif i == 499: display(ga,  "Consecutive Pareto Fronts 500")
+    elif i == 749: display(ga,  "Consecutive Pareto Fronts 750")
+    elif i == 999: display(ga,  "Consecutive Pareto Fronts 1000")
 
 display(ga=ga)
