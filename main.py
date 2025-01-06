@@ -5,8 +5,10 @@ import matplotlib.pyplot as plt
 
 from collections import defaultdict
 
-import sys
-sys.setrecursionlimit(1000)  # Increase recursion limit to 2000
+from pymoo.indicators.hv import HV
+
+# import sys
+# sys.setrecursionlimit(1000) # might need to increase (maybe? debug code left if needed)
 
 DIR = "resources/" # + "test-example-n4.txt" # loading data
 
@@ -579,21 +581,63 @@ class GA:
         child = individual.pop(random.randint(0, len(individual)-1))
         return child
     
-    # def select_random(self, front, num_to_select):
-    #     """
-    #         Selects random elements up till num_to_select
-    #     """
+    def select_random(self, front, num_to_select):
+        """
+            Selects random elements up till num_to_select
+        """
 
-    #     if len(front) < num_to_select:
-    #         raise "ERROR: invalid front provided: must comply with len(front) < num_to_select "
+        if len(front) < num_to_select:
+            raise "ERROR: invalid front provided: must comply with len(front) < num_to_select "
         
-    #     selected_front = []
+        selected_front = []
 
-    #     while len(selected_front) < num_to_select:
-    #         r = random.randint(0, len(front)-1)
-    #         selected_front.append(front.pop(r))
+        while len(selected_front) < num_to_select:
+            r = random.randint(0, len(front)-1)
+            selected_front.append(front.pop(r))
 
-    #     return selected_front
+        return selected_front
+
+    def select_s_metric(self, front, front_ids, num_to_select):
+        """
+            takes a front and returns a list of selected ids in order
+        """
+
+        if len(front_ids) < num_to_select:
+            raise "ERROR: invalid front provided: must comply with len(front) < num_to_select "
+        
+        if len(front_ids) <= 1: # already has determined behaviour  
+            return self.select_random(front_ids, num_to_select)
+        
+        front_np = np.array(front)
+
+        # epsilon value (max value for prioritizing edge solutions) 
+        # default was 1 but is now replaced
+        epsilon_x = (sum(front_np[:, 0]))/len(front)
+        epsilon_y =  (sum(front_np[:, 1]))/len(front)
+        
+        # reference point 
+        reference_point = np.array([max(front_np[:, 0]) + epsilon_x, max(front_np[:, 1]) + epsilon_y])  # Reference point is chosen slightly worse than the worst solution in the front
+
+        # calculate reference hypervolume and init
+        hv = HV(reference_point)
+        front_hypervolume = hv.do(front_np)
+
+        # Generate contribution values 
+        hv_contrib = []
+        for i in range(len(front)):
+            reduced_front = front
+            reduced_front = np.array(reduced_front)
+            reduced_front =  np.delete(reduced_front, i, axis=0)
+            reduced_front_hypervolume = hv.do(reduced_front)
+
+            # calculate contribution 
+            reduced_contrib = front_hypervolume - reduced_front_hypervolume
+            hv_contrib.append(reduced_contrib)
+
+        # order list 
+        ids = [index for index, score in sorted(zip(front_ids, hv_contrib), key=lambda x: x[1], reverse=True)]
+
+        return ids[:num_to_select]
 
     def selection(self, pop, pop_size):
         """
@@ -604,7 +648,7 @@ class GA:
         x, y = self.gen_fitness(pop)
         xy = [[xi, yi] for xi, yi in zip(x, y)]
         # Get consecutive Pareto fronts
-        _, front_ids = get_consecutive_pareto_fronts(xy)
+        front, front_ids = get_consecutive_pareto_fronts(xy)
 
         solutions = []
 
@@ -615,7 +659,7 @@ class GA:
                     solutions.append(fr)
             elif ((len(solutions) + len(front_ids[i])) >= pop_size) and (len(solutions) < pop_size):
                 # Select from final front 
-                _front_ids = self.select_random(front_ids[i], (pop_size - len(solutions)))
+                _front_ids = self.select_s_metric(front[i], front_ids[i], (pop_size - len(solutions))) 
                 for fr in _front_ids:
                     solutions.append(fr)
             else:   
@@ -815,9 +859,10 @@ def display(ga, title="Consecutive Pareto Fronts"):
 # ==========================================================================
 #   MAIN
 # ==========================================================================
-nodes, problem_dict = load_data(DIR + "fnl4461-n4460.txt")
+# nodes, problem_dict = load_data(DIR + "fnl4461-n4460.txt")
 
 # nodes, problem_dict = load_data(DIR + "a280-n2790.txt")
+nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
 
 ga = GA(nodes, problem_dict, pop_size=100, dyn_crossover=2, dyn_mutation=2)
 
