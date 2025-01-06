@@ -181,6 +181,13 @@ class Utils:
         for node in route:
             ws = node[1]
 
+            # if ws is type(int):
+            #     print(ws)
+            #     print("\n")
+            #     print(node[1])
+            #     raise("INT?")
+
+            # if sum(ws) == 0: continue
             if len(self.nodes[node[0]-1][3]) == 0: continue
 
             for i in range(len(ws)):
@@ -365,12 +372,15 @@ class GA:
         """
         return self.pop
 
-    def generate_gene(self):
+    def generate_gene(self, gene_id=-1, full_zeros=False):
         """
             generates a single gene
 
             location 1 is always the first and last so never allowed to be generated
         """
+        if full_zeros: 
+            return [gene_id, self.mutation_single_node_full(gene_id, full_zeros=full_zeros)]
+
         gene_id = random.randint(1, self.num_nodes-1)
         return [gene_id, self.mutation_single_node_full(gene_id)]
 
@@ -425,7 +435,7 @@ class GA:
 
         return self.fix_individual_validity(individual) # final checks (should be clear but this is the init pop)
 
-    def mutation_single_node_full(self, individual_node_id):
+    def mutation_single_node_full(self, individual_node_id, full_zeros=False):
         """
             Fully mutates a single node's selected bags in the individual
 
@@ -442,16 +452,40 @@ class GA:
             raise("NO")
             return [0]
         
+        if full_zeros:
+            zeros = [0 for _ in range(bag_length)]
+            return zeros
+        
         # random chance 0 or 1 for each bag (50% chance each)
         bags = [random.choice([0, 1]) for _ in range(bag_length)]
 
         # one bag must be selected else impossible to visit
-        if sum(bags) == 0: 
-            bags[random.randint(0, bag_length-1)] = 1
+        # if sum(bags) == 0: # TODO: remove all instances of this check as its incorrect 
+        #     bags[random.randint(0, bag_length-1)] = 1
 
         return bags
     
-    def mutation_new_gene(self, individual):
+    def correct_missing(self, individual):
+        """
+            gets all the missing IDs for an individual 
+        """
+
+        if len(individual) >= self.UTIL.get_max_locations():
+            return individual
+
+        # collect the node ids
+        list = [x[0] for x in individual]
+        list = sorted(list)
+
+        for num in range(1, self.UTIL.get_max_locations()+1):
+            if num not in list:
+                individual = self.mutation_new_gene(individual=individual, gene_id=num, full_zeros=True)
+            
+        return individual
+        
+
+    
+    def mutation_new_gene(self, individual, full_zeros=False, gene_id=-1):
         """
             Mutation adds a new gene into a position in the individual 
 
@@ -463,7 +497,7 @@ class GA:
         r = random.randint(0, len(individual))
         gene = []
 
-        if len(individual) >= self.UTIL.get_max_locations()-1:
+        if len(individual) >= self.UTIL.get_max_locations()-1 and (not full_zeros):
             # CAN ONLY REGENERATE A GENE NOT REPLACE IT SO
             # SAVE GENE ID , MUTATE BAGS BY MUTATION , MOVE ON
             max_mutation_flag = False 
@@ -472,10 +506,9 @@ class GA:
             gene[1] = [1 - bit if random.random() < 0.5 else bit for bit in gene[1]]
             individual.pop(r1)
         else:
-            gene = self.generate_gene()
-        
-
-
+            if full_zeros == True:
+                gene = self.generate_gene(gene_id=gene_id, full_zeros=full_zeros)
+            else: gene = self.generate_gene()
         
         # first attempt 
         new = individual[:r] + [gene] + individual[r:]
@@ -554,11 +587,15 @@ class GA:
                 individual = new 
 
                 # not role to mutate here only fix so this is acceptable so far if max locations
-                if len(individual) >= self.UTIL.get_max_locations()-1:
+                if len(individual) >= self.UTIL.get_max_locations() - 1:
                     break
 
                 # find new gene 
                 new = self.mutation_new_gene(new)
+        
+        # individual MUST visit all cities 
+        if len(individual) != self.UTIL.get_max_locations() - 1:
+            individual = self.correct_missing(individual)
 
         return individual
 
@@ -577,6 +614,7 @@ class GA:
         child = parent1[:r] + parent2[r:]
 
         child = self.fix_individual_validity(child)
+        child = self.correct_missing(child)
 
         return child
 
@@ -693,7 +731,6 @@ class GA:
 
         child_pop = []
 
-
         def check_dupe(c, popul=child_pop):
             """
                 Check for duplicates within child_pop 
@@ -730,12 +767,12 @@ class GA:
         # add parents to child pop (checks are mostly unnecessary but are still a layer of security)
         for parent in self.pop:
             # append only if non-dupe (mostly for initial pop)
-            if self.__GENERATION_INDEX__ <= 1:
-                child_pop.extend(self.pop)
-                break
+            # if self.__GENERATION_INDEX__ <= 1:
+            #     child_pop.extend(self.pop)
+            #     break
 
             if not check_dupe(parent):
-                child_pop.append(parent)
+                child_pop.append(self.correct_missing(parent))
 
         # replace pop with child pop to remove dupes from causing damage 
         print(f"Parent Population {len(child_pop)} / {len(self.pop)}")
@@ -751,7 +788,8 @@ class GA:
             for j in range(num_genes_mutation):
                 # child = self.mutation_replace_gene(child) # TODO bugfix
                 child = self.mutation_new_gene(child)
-                child = self.fix_individual_validity(child)
+                child = self.fix_individual_validity(child) # more checks for validity 
+                child = self.correct_missing(child) # will exit instantly if correct size
             
             # child_pop.append(child)
             if not check_dupe(child):
@@ -778,6 +816,7 @@ class GA:
 
             # crossover
             child = self.crossover(p1, p2)
+            child = self.correct_missing(child)
 
             if not check_dupe(child):
                 child_pop.append(child)
@@ -791,10 +830,15 @@ class GA:
         # selection 
         new_pop = []
 
+        # fix integrity of solutions that get through the gaps (TODO: find where 277/278 length leak is)
+        for i in range(len(child_pop)):
+            child_pop[i] = self.correct_missing(child_pop[i])
+
         # select next generation 
         new_pop_ids = self.selection(child_pop, self.pop_size)
 
         for id in new_pop_ids:
+            # print(len(child_pop[id]))
             new_pop.append(child_pop[id])
 
         self.pop = new_pop
@@ -867,7 +911,7 @@ def display(ga, title="Consecutive Pareto Fronts"):
     plt.grid(True)
     plt.show()
 
-def report(ga, folder_name="results/_bin", task_name="bin"):
+def report(ga, folder_name="results/_bin", task_name="bin", n=100):
     """
         Generates Report .x .f files
             saves them in given location 
@@ -878,8 +922,13 @@ def report(ga, folder_name="results/_bin", task_name="bin"):
         os.makedirs(folder_name)
         print(f"Folder '{folder_name}' created!")
 
-    solutions = ga.get_solutions()
-    
+    all_solutions = ga.get_solutions()
+    solution_ids = ga.selection(all_solutions, n)
+    solutions = []
+
+    for id in solution_ids:
+        solutions.append(all_solutions[id])
+
         ################################# .x ################
 
 
@@ -920,7 +969,7 @@ def report(ga, folder_name="results/_bin", task_name="bin"):
     with open(file_path, "w") as file:
         file.write(f"{page}")
 
-        ################################# .f ################
+    ################################# .f ################
 
     print(f"Solution {i} written to {file_path}\{task_name}.x")
     
@@ -946,9 +995,11 @@ def report(ga, folder_name="results/_bin", task_name="bin"):
 #   MAIN
 # ==========================================================================
 
-def run(problem="a280-n1395", num_gen=1000, save_point=25):
+def run(problem="a280-n1395", num_gen=1000, save_point=25, n=100):
     """
         Runs the problem
+
+        n is the 
     """
 
     nodes, problem_dict = load_data(f"resources/{problem}.txt")
@@ -956,12 +1007,18 @@ def run(problem="a280-n1395", num_gen=1000, save_point=25):
     ga = GA(nodes, problem_dict, pop_size=100, dyn_crossover=2, dyn_mutation=2)
 
     # MAIN LOOP
-    for i in range(num_gen):
+    for i in range(num_gen-1):
         ga.generation()
 
-        if i % 25 == 0:
+        if i % save_point == 0:
             # save copy of latest report 
-            report(ga, "results", f"G9-{problem}")
+            report(ga, "results", f"G9-{problem}", n)
+            display(ga)
+
+
+    # final generation 
+    ga.pop_size = n         # set population size (this will change results after next gen)
+    ga.generation()         # run gen and will scale result to pop_size 
 
     report(ga, "results", f"G9-{problem}")
 
