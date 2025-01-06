@@ -435,7 +435,7 @@ class GA:
 
         bag_length = len(self.UTIL.nodes[individual_node_id][3])
 
-        # if bag_length == 1:
+        # if bag_length == 1: # TODO: 
         #     return [1]
         
         if bag_length == 0:
@@ -1034,6 +1034,6 @@ def run(problem="a280-n1395", num_gen=1000, save_point=5, backup_point=25, n=100
 
     report(ga, "results", f"G9-{problem}")
 
-run(problem="a280-n279", num_gen=10000, n=100)
-# run(problem="a280-n1395", num_gen=10000, n=100)
-# run(problem="a280-n2790", num_gen=10000, n=100)
+# run(problem="a280-okn279", num_gen=10000, n=100) # TODO: BROKEN 
+run(problem="a280-n1395", num_gen=10000, n=100) # working 
+# run(problem="a280-n2790", num_gen=10000, n=100) # working 
