@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 
 import sys
-sys.setrecursionlimit(10000)  # Increase recursion limit to 2000
+sys.setrecursionlimit(1000)  # Increase recursion limit to 2000
 
 DIR = "resources/" # + "test-example-n4.txt" # loading data
 
@@ -173,7 +173,7 @@ class Utils:
         """
 
         weight = 0.0
-
+       
         for node in route:
             ws = node[1]
 
@@ -271,6 +271,18 @@ class Utils:
         """
             Calculates the fitness of the individual
         """
+
+        # add start and end point 
+        individual = [self.nodes[0]] + individual[:] + [self.nodes[0]]
+
+        print("\n\n")
+        print(individual)
+
+        if len(self.get_instances_of_repeated_gene(individual)) > 1:
+            print("\n\n\n")
+            print(individual)
+            print(self.get_instances_of_repeated_gene(individual))
+            raise("DUPES + 2")
         
         history = []
         time = 0
@@ -349,8 +361,10 @@ class GA:
     def generate_gene(self):
         """
             generates a single gene
+
+            location 1 is always the first and last so never allowed to be generated
         """
-        gene_id = random.randint(0, self.num_nodes-1)
+        gene_id = random.randint(1, self.num_nodes-1)
         return [gene_id, self.mutation_single_node_full(gene_id)]
 
     def generate_individual(self, retries = 3):
@@ -370,7 +384,7 @@ class GA:
         incomplete = True
         while incomplete:
             # generate node/gene
-            r = random.randint(0, self.num_nodes-1)
+            r = random.randint(1, self.num_nodes-1)
 
             if r not in individual_id:
                 individual_id.append(r)
@@ -675,23 +689,6 @@ class GA:
         dupes_counter = 0
 
 
-        # # mutation drop (below weight limit)
-        # for i in range(50):
-        #     r = random.randint(0, len(self.pop)-1)
-        #     child = self.pop[r]
-
-        #     child = self.mutation_drop(child) 
-        #     print(len(child))
-        #     if not check_dupe(child):
-        #         child_pop.append(child)
-        #     else:
-        #         print(len(child))
-        #         print(len(self.pop[r]))
-        #         dupes_counter += 1
-
-        # print(f"Mutation Dropping Dupes Found {dupes_counter}")
-        # dupes_counter = 0
-
         # crossover
         for i in range(self.DYNAMIC_CROSSOVER):
             r1 = random.randint(0, len(self.pop)-1)
@@ -716,29 +713,6 @@ class GA:
         print(f"Crossover Dupes Found {dupes_counter}")
         dupes_counter = 0
 
-        # # knapsack # DEPRECATED 
-        # for i in range(self.DYNAMIC_ENCODING):
-        #     r = random.randint(0, len(self.pop)-1)
-        #     child = self.pop[r]
-
-        #     if len(child[1]) >= 1:
-        #         # mutate a single gene (if possible*)
-
-        #         # SELECT GENE
-        #         r = random.randint(0, len(child)-1)
-        #         gene_id = child[r][0]
-        #         print(gene_id)
-        #         child[r][0] = child[gene_id][1] = self.mutation_single_node_full(gene_id)
-        #         # child = self.mutation_bags(child, random.randint(0, len(child)-1))
-        #         # print(child)
-        #         if not check_dupe(child):
-        #             child_pop.append(child)
-        #         else:
-        #             dupes_counter += 1
-
-        # print(f"Knapsack Encoding Dupes Found {dupes_counter}")
-        # dupes_counter = 0
-
         
         # selection 
         new_pop = []
@@ -761,7 +735,6 @@ class GA:
         print(f"======================")
 
         # print(len(new_pop))
-
 
     def gen_fitness(self, pop=None):
         """
@@ -829,20 +802,20 @@ def display(ga, title="Consecutive Pareto Fronts"):
 # ==========================================================================
 # nodes, problem_dict = load_data(DIR + "fnl4461-n22300.txt")
 
-nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
+nodes, problem_dict = load_data(DIR + "a280-n2790.txt")
 
-ga = GA(nodes, problem_dict, pop_size=200, dyn_crossover=2, dyn_mutation=2)
+ga = GA(nodes, problem_dict, pop_size=100, dyn_crossover=2, dyn_mutation=2)
 
 # MAIN LOOP
-for i in range(100):
+for i in range(10):
     ga.generation()
 
-    if i == 0: display(ga, "Consecutive Pareto Fronts 0")
-    elif i == 4: display(ga, "Consecutive Pareto Fronts 5")
-    elif i == 9: display(ga,  "Consecutive Pareto Fronts 10")
-    elif i == 24: display(ga,  "Consecutive Pareto Fronts 25")
-    elif i == 49: display(ga,  "Consecutive Pareto Fronts 50")
-    elif i == 74: display(ga,  "Consecutive Pareto Fronts 75")
-    elif i == 99: display(ga,  "Consecutive Pareto Fronts 100")
+    # if i == 0: display(ga, "Consecutive Pareto Fronts 0")
+    # elif i == 4: display(ga, "Consecutive Pareto Fronts 5")
+    # elif i == 9: display(ga,  "Consecutive Pareto Fronts 10")
+    # elif i == 24: display(ga,  "Consecutive Pareto Fronts 25")
+    # elif i == 49: display(ga,  "Consecutive Pareto Fronts 50")
+    # elif i == 74: display(ga,  "Consecutive Pareto Fronts 75")
+    # elif i == 99: display(ga,  "Consecutive Pareto Fronts 100")
 
 display(ga=ga)
