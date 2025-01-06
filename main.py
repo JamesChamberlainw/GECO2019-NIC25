@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 
 from pymoo.indicators.hv import HV
-
+import copy 
 import os
 
 # import sys
@@ -446,7 +446,7 @@ class GA:
         bag_length = len(self.UTIL.nodes[individual_node_id][3])
 
         if bag_length == 1:
-            return [1]
+            return [random.choice([0, 1])]
         
         if bag_length == 0:
             raise("NO")
@@ -479,7 +479,8 @@ class GA:
 
         for num in range(1, self.UTIL.get_max_locations()+1):
             if num not in list:
-                individual = self.mutation_new_gene(individual=individual, gene_id=num, full_zeros=True)
+                # individual = self.mutation_new_gene(individual=individual, gene_id=num, full_zeros=True)
+                individual = [self.generate_gene(gene_id=num, full_zeros=True)] + individual[:]
             
         return individual
         
@@ -774,7 +775,7 @@ class GA:
             #     break
 
             if not check_dupe(parent):
-                child_pop.append(self.correct_missing(parent))
+                child_pop.append(copy.deepcopy(parent))
 
         # replace pop with child pop to remove dupes from causing damage 
         print(f"Parent Population {len(child_pop)} / {len(self.pop)}")
@@ -963,7 +964,6 @@ def Backup_copy(ga, title="genG9task", folder_name="report/backup", gen_num = 0,
 
     plt.clf()
 
-
 def report(ga, folder_name="results/_bin", task_name="bin", n=100):
     """
         Generates Report .x .f files
@@ -1078,6 +1078,6 @@ def run(problem="a280-n1395", num_gen=1000, save_point=5, backup_point=50, n=100
 
     report(ga, "results", f"G9-{problem}")
 
-# run(problem="a280-n279", num_gen=10000, n=100)
-run(problem="a280-n1395", num_gen=10000, n=100)
+run(problem="a280-n279", num_gen=10000, n=100)
+# run(problem="a280-n1395", num_gen=10000, n=100)
 # run(problem="a280-n2790", num_gen=10000, n=100)
