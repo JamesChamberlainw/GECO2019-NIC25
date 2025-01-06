@@ -579,21 +579,21 @@ class GA:
         child = individual.pop(random.randint(0, len(individual)-1))
         return child
     
-    def select_random(self, front, num_to_select):
-        """
-            Selects random elements up till num_to_select
-        """
+    # def select_random(self, front, num_to_select):
+    #     """
+    #         Selects random elements up till num_to_select
+    #     """
 
-        if len(front) < num_to_select:
-            raise "ERROR: invalid front provided: must comply with len(front) < num_to_select "
+    #     if len(front) < num_to_select:
+    #         raise "ERROR: invalid front provided: must comply with len(front) < num_to_select "
         
-        selected_front = []
+    #     selected_front = []
 
-        while len(selected_front) < num_to_select:
-            r = random.randint(0, len(front)-1)
-            selected_front.append(front.pop(r))
+    #     while len(selected_front) < num_to_select:
+    #         r = random.randint(0, len(front)-1)
+    #         selected_front.append(front.pop(r))
 
-        return selected_front
+    #     return selected_front
 
     def selection(self, pop, pop_size):
         """
@@ -751,7 +751,6 @@ class GA:
         print(f"Pareto Length {len(set(new_pop_ids))} / {len(new_pop_ids)}")
         print(f"======================")
 
-
     def gen_fitness(self, pop=None):
         """
             Generates the fitness of the population
@@ -816,9 +815,9 @@ def display(ga, title="Consecutive Pareto Fronts"):
 # ==========================================================================
 #   MAIN
 # ==========================================================================
-# nodes, problem_dict = load_data(DIR + "fnl4461-n22300.txt")
+nodes, problem_dict = load_data(DIR + "fnl4461-n4460.txt")
 
-nodes, problem_dict = load_data(DIR + "a280-n2790.txt")
+# nodes, problem_dict = load_data(DIR + "a280-n2790.txt")
 
 ga = GA(nodes, problem_dict, pop_size=100, dyn_crossover=2, dyn_mutation=2)
 
