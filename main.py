@@ -554,8 +554,10 @@ class GA:
                 r = random.randint(0, len(individual)-1)
                 individual.pop(r)
         
+        # recalculate to ensure that all repeated genes are removed
+        gene_ids = self.UTIL.get_instances_of_repeated_gene(individual)
 
-        # repeated gene dropping (random from remaining)
+        # repeated gene dropping (random from remaining) [list of list of repeated locations [[1, 2] [3, 4, 5]]
         while len(gene_ids) > 0:
             flag_repeated = 1 
             # random gene_ids lst 
@@ -587,14 +589,14 @@ class GA:
                 individual = new 
 
                 # not role to mutate here only fix so this is acceptable so far if max locations
-                if len(individual) >= self.UTIL.get_max_locations() - 1:
+                if len(new) >= self.UTIL.get_max_locations() - 1:
                     break
 
                 # find new gene 
                 new = self.mutation_new_gene(new)
         
         # individual MUST visit all cities 
-        if len(individual) != self.UTIL.get_max_locations() - 1:
+        if len(individual) != self.UTIL.get_max_locations():
             individual = self.correct_missing(individual)
 
         return individual
@@ -1076,6 +1078,6 @@ def run(problem="a280-n1395", num_gen=1000, save_point=5, backup_point=50, n=100
 
     report(ga, "results", f"G9-{problem}")
 
-run(problem="a280-n279", num_gen=10000, n=100)
+# run(problem="a280-n279", num_gen=10000, n=100)
 run(problem="a280-n1395", num_gen=10000, n=100)
-run(problem="a280-n2790", num_gen=10000, n=100)
+# run(problem="a280-n2790", num_gen=10000, n=100)
