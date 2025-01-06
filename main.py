@@ -7,6 +7,8 @@ from collections import defaultdict
 
 from pymoo.indicators.hv import HV
 
+import os
+
 # import sys
 # sys.setrecursionlimit(1000) # might need to increase (maybe? debug code left if needed)
 
@@ -251,6 +253,8 @@ class Utils:
 
         if velocity < W_MIN or weight >= self.problem_dict["CAPACITY"]:
             velocity = W_MIN
+        elif velocity >= 1.0:
+            velocity = W_MAX
 
         return velocity
     
@@ -354,6 +358,12 @@ class GA:
             self.pop.append(individual)
             # print(i)
         print("============================")
+
+    def get_solutions(self):
+        """
+            returns best solutions so far
+        """
+        return self.pop
 
     def generate_gene(self):
         """
@@ -857,6 +867,87 @@ def display(ga, title="Consecutive Pareto Fronts"):
     plt.grid(True)
     plt.show()
 
+def report(ga, folder_name="results/_bin", task_name="bin"):
+    """
+        Generates Report .x .f files
+            saves them in given location 
+    """
+
+    # Create Report folder structure 
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+        print(f"Folder '{folder_name}' created!")
+
+    solutions = ga.get_solutions()
+    
+        ################################# .x ################
+
+
+    page = ""
+
+    for i, solution in enumerate(solutions):
+        # Define the filename dynamically, e.g., solution1.x, solution2.x, etc.
+        file_path = os.path.join(folder_name, f"{task_name}.x")
+        
+        packing_plan = ""
+        path_taken = "1"
+
+        # build path
+        for j in range(len(solution)):
+            path_taken = f"{path_taken} {solution[j][0]}"
+
+        # build packing plan 
+        for j in range(len(solution)):
+            pack = ""
+
+            for bool in solution[j][1]:
+                if pack == "":
+                    pack = f"{bool}"
+                else:
+                    pack = f"{pack} {bool}"
+
+            if packing_plan == "":
+                packing_plan = pack
+            else:
+                packing_plan = f"{packing_plan} {pack}"
+
+        if page == "":
+            page = f"{path_taken}\n{packing_plan}\n"
+        page = f"{page}\n{path_taken}\n{packing_plan}\n"
+
+
+    # Write the solution to the file
+    with open(file_path, "w") as file:
+        file.write(f"{page}")
+
+        ################################# .f ################
+
+    print(f"Solution {i} written to {file_path}\{task_name}.x")
+    
+    # new directory 
+    file_path = os.path.join(folder_name, f"{task_name}.f")
+
+    # generate time / profit 
+    x, y = ga.gen_fitness()
+    y = -y # reverse negative 
+
+    time_profit = ""
+    for i in range(len(x)):
+        if time_profit == "":
+            time_profit = f"{x[i]} {y[i]}\n"
+        else:
+            time_profit = f"{time_profit}{x[i]} {y[i]}\n"
+
+    with open(file_path, "w") as file:
+        file.write(f"{time_profit}")
+
+
+
+
+# ==========================================================================
+#   DATA EXTRACTION 
+# ==========================================================================
+
 # ==========================================================================
 #   MAIN
 # ==========================================================================
@@ -864,17 +955,23 @@ def display(ga, title="Consecutive Pareto Fronts"):
 
 # nodes, problem_dict = load_data(DIR + "a280-n2790.txt")
 nodes, problem_dict = load_data(DIR + "a280-n1395.txt")
+# nodes, problem_dict = load_data(DIR + "a280-n279.txt")
 
 ga = GA(nodes, problem_dict, pop_size=100, dyn_crossover=2, dyn_mutation=2)
 
 # MAIN LOOP
-for i in range(1000):
+for i in range(1):
     ga.generation()
 
-    if i == 0: display(ga, "Consecutive Pareto Fronts 0")
-    elif i == 249: display(ga,  "Consecutive Pareto Fronts 250")
-    elif i == 499: display(ga,  "Consecutive Pareto Fronts 500")
-    elif i == 749: display(ga,  "Consecutive Pareto Fronts 750")
-    elif i == 999: display(ga,  "Consecutive Pareto Fronts 1000")
+    # if i == 0: display(ga, "Consecutive Pareto Fronts 0")
+    # elif i == 249: display(ga,  "Consecutive Pareto Fronts 250")
+    # elif i == 499: display(ga,  "Consecutive Pareto Fronts 500")
+    # elif i == 749: display(ga,  "Consecutive Pareto Fronts 750")
+    # elif i == 999: display(ga,  "Consecutive Pareto Fronts 1000")
+
+GROUP_NAME = "G9"
+
+report(ga)
 
 display(ga=ga)
+
